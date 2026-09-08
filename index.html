@@ -1133,6 +1133,11 @@
             <input type="text" id="customServiceDetailsInput" placeholder="Enter Details / Notes (Optional)">
           </div>
 
+          <div class="form-group">
+            <label>Service Description / Notes (For Future Reference)</label>
+            <input type="text" id="serviceNotesInput" placeholder="e.g. Customer name, document type, work details">
+          </div>
+
           <div style="display: flex; gap: 12px;">
             <div class="form-group" style="flex: 1;">
               <label>Department Fee (₹)</label>
@@ -2172,6 +2177,10 @@
       <label>Service Description</label>
       <input type="text" id="editLoggedServiceDesc" required>
     </div>
+    <div class="form-group">
+      <label>Description / Notes (For Future Reference)</label>
+      <input type="text" id="editLoggedServiceNotes" placeholder="e.g. Customer name, document type, work details">
+    </div>
     <div style="display: flex; gap: 12px;">
       <div class="form-group" style="flex: 1;">
         <label>Dept Fee (₹)</label>
@@ -2453,6 +2462,7 @@ const FIREBASE_CONFIG = {
   window.addEventListener('DOMContentLoaded', () => {
     initDefaultDates();
     loadLocalData();
+    if (dedupeEntryIds()) saveData(); /* repair duplicate ids saved by the old version */
     setupFirebaseSync();
     renderLoginDropdown();
   });
@@ -2516,7 +2526,7 @@ const FIREBASE_CONFIG = {
         id: s.id, date: s.date, serviceName: s.desc, deptFee: s.deptFee || 0,
         serviceCharge: s.serviceCharge || 0, discount: s.discount || 0,
         finalPay: s.total || 0, payMode: s.payMode === 'Split Payment' ? 'Cash Drawer' : s.payMode,
-        user: s.staff, timestamp: Date.now(), settled: s.payMode !== 'Receivables/Credit'
+        user: s.staff, notes: s.notes || "", timestamp: Date.now(), settled: s.payMode !== 'Receivables/Credit'
       })),
       expenseEntries: appData.expenseLog.map(e => ({
         id: e.id, date: e.date, category: e.category, description: e.desc,
@@ -2572,6 +2582,7 @@ const FIREBASE_CONFIG = {
         }
         if (val) {
           appData = convertLegacyData(val);
+          dedupeEntryIds();
           localStorage.setItem('ATMOS_HUB_DATA_2026', JSON.stringify(appData));
           refreshAllViews();
           isFirebaseSyncActive = true;
@@ -2593,6 +2604,7 @@ const FIREBASE_CONFIG = {
       isFirebaseSyncActive = true;
       if (!legacy) return;
       appData = convertLegacyData(legacy);
+      dedupeEntryIds();
       localStorage.setItem('ATMOS_HUB_DATA_2026', JSON.stringify(appData));
       firebaseDbRef.set(convertToLegacyFormat()).catch(err => console.error("Firebase sync write error:", err));
       refreshAllViews();
@@ -2633,7 +2645,7 @@ const FIREBASE_CONFIG = {
 
     if (Array.isArray(legacy.serviceEntries)) {
       const converted = legacy.serviceEntries.map((e, i) => ({
-        id: 'SRV_' + (e.timestamp || e.id || (Date.now() + i)),
+        id: (e.id !== undefined && e.id !== null && String(e.id).length > 0) ? e.id : 'SRV_' + (Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 8)),
         date: e.date,
         time: e.time || istTimeFromTimestamp(e.timestamp),
         desc: e.serviceName || e.desc || "",
@@ -2646,14 +2658,15 @@ const FIREBASE_CONFIG = {
         splitCash: 0,
         splitBank: 0,
         splitReceivable: 0,
-        staff: e.user || e.staff || ""
+        staff: e.user || e.staff || "",
+        notes: e.notes || ""
       })).reverse();
       out.serviceLog = converted;
     }
 
     if (Array.isArray(legacy.expenseEntries)) {
       const converted = legacy.expenseEntries.map((e, i) => ({
-        id: 'EXP_' + (e.timestamp || e.id || (Date.now() + i)),
+        id: (e.id !== undefined && e.id !== null && String(e.id).length > 0) ? e.id : 'EXP_' + (Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 8)),
         date: e.date,
         time: istTimeFromTimestamp(e.timestamp),
         category: e.category || "",
@@ -2667,7 +2680,7 @@ const FIREBASE_CONFIG = {
 
     if (Array.isArray(legacy.internalTransfers)) {
       const converted = legacy.internalTransfers.map((e, i) => ({
-        id: 'TRF_' + (e.timestamp || e.id || (Date.now() + i)),
+        id: (e.id !== undefined && e.id !== null && String(e.id).length > 0) ? e.id : 'TRF_' + (Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 8)),
         date: e.date,
         time: istTimeFromTimestamp(e.timestamp),
         direction: e.direction === 'BankToCash' ? 'BankToCash' : 'CashToBank',
@@ -2739,6 +2752,39 @@ const FIREBASE_CONFIG = {
     }
 
     return out;
+  }
+
+  /* ---------------------------------------------------
+     UNIQUE ID HELPERS
+     Fix: deleting or editing one entry used to affect all
+     entries, because after a cloud-sync round trip every
+     record ended up with the same id (rebuilt from the
+     shared save-timestamp). Ids now keep their original
+     unique value, and new ids get a random suffix so they
+     can never collide.
+  --------------------------------------------------- */
+  function generateUniqueId(prefix) {
+    return prefix + "_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
+  }
+
+  /* One-time repair for records already saved with duplicate ids. */
+  function dedupeEntryIds() {
+    const lists = [["serviceLog", "SRV"], ["expenseLog", "EXP"], ["transferLog", "TRF"], ["invoices", "INV"], ["masterServices", "srv"]];
+    let changed = false;
+    lists.forEach(function(listPair) {
+      const listName = listPair[0], prefix = listPair[1];
+      if (!Array.isArray(appData[listName])) return;
+      const seen = new Set();
+      appData[listName].forEach(function(entry) {
+        if (!entry || typeof entry !== "object") return;
+        if (!entry.id || seen.has(entry.id)) {
+          entry.id = generateUniqueId(prefix);
+          changed = true;
+        }
+        seen.add(entry.id);
+      });
+    });
+    return changed;
   }
 
   /* Parse a check-in time string ("09:17 am", "10:43 PM", "12:07") into minutes past midnight */
@@ -3293,6 +3339,8 @@ const FIREBASE_CONFIG = {
       desc = customName ? `${customName}${customDetail ? ' - ' + customDetail : ''}` : "Custom Service";
     }
 
+    const serviceNotes = document.getElementById('serviceNotesInput').value.trim();
+
     const deptFee = parseFloat(document.getElementById('deptFeeInput').value || 0);
     const srvCharge = parseFloat(document.getElementById('basePrice').value || 0);
     const discount = parseFloat(document.getElementById('discountAmt').value || 0);
@@ -3316,7 +3364,7 @@ const FIREBASE_CONFIG = {
     }
 
     const newRecord = {
-      id: "SRV_" + Date.now(),
+      id: "SRV_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
       date: date,
       time: getISTTimeStr(),
       desc: desc,
@@ -3329,7 +3377,8 @@ const FIREBASE_CONFIG = {
       splitCash: splitCash,
       splitBank: splitBank,
       splitReceivable: splitReceivable,
-      staff: currentUser.name
+      staff: currentUser.name,
+      notes: serviceNotes
     };
 
     appData.serviceLog.unshift(newRecord);
@@ -3344,6 +3393,7 @@ const FIREBASE_CONFIG = {
     alert("Service transaction logged successfully!");
 
     // Reset form
+    document.getElementById('serviceNotesInput').value = '';
     document.getElementById('discountAmt').value = 0;
     document.getElementById('splitPaymentToggle').checked = false;
     toggleSplitPaymentUI();
@@ -3420,7 +3470,7 @@ const FIREBASE_CONFIG = {
 
       tr.innerHTML = `
         <td>${s.date} <span style="font-size:0.75rem; color:var(--text-muted);">${s.time || ''}</span></td>
-        <td><strong>${s.desc}</strong></td>
+        <td><strong>${s.desc}</strong>${s.notes ? `<br><span style="font-size:0.72rem; color:var(--text-muted);">${s.notes}</span>` : ''}</td>
         <td>₹${parseFloat(s.deptFee || 0).toFixed(2)}</td>
         <td>₹${parseFloat(s.serviceCharge || 0).toFixed(2)}</td>
         <td>₹${parseFloat(s.discount || 0).toFixed(2)}</td>
@@ -3460,6 +3510,7 @@ const FIREBASE_CONFIG = {
     document.getElementById('editLoggedServiceCharge').value = s.serviceCharge;
     document.getElementById('editLoggedDiscount').value = s.discount;
     document.getElementById('editLoggedFinalPay').value = s.total;
+    document.getElementById('editLoggedServiceNotes').value = s.notes || '';
     document.getElementById('editLoggedPayMode').value = s.payMode === 'Split Payment' ? 'Cash Drawer' : s.payMode;
 
     document.getElementById('editServiceModal').style.display = 'flex';
@@ -3487,6 +3538,7 @@ const FIREBASE_CONFIG = {
     s.serviceCharge = parseFloat(document.getElementById('editLoggedServiceCharge').value || 0);
     s.discount = parseFloat(document.getElementById('editLoggedDiscount').value || 0);
     s.total = parseFloat(document.getElementById('editLoggedFinalPay').value || 0);
+    s.notes = document.getElementById('editLoggedServiceNotes').value.trim();
     s.payMode = document.getElementById('editLoggedPayMode').value;
     s.isSplit = false;
 
@@ -3515,7 +3567,7 @@ const FIREBASE_CONFIG = {
     const payMode = document.getElementById('expensePayMode').value;
 
     const newExpense = {
-      id: "EXP_" + Date.now(),
+      id: "EXP_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
       date: date,
       time: getISTTimeStr(),
       category: category,
@@ -3633,7 +3685,7 @@ const FIREBASE_CONFIG = {
     const amount = parseFloat(document.getElementById('domainTransferAmount').value || 0);
 
     const newTransfer = {
-      id: "TRF_" + Date.now(),
+      id: "TRF_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
       date: date,
       time: getISTTimeStr(),
       direction: direction,
@@ -3783,7 +3835,15 @@ const FIREBASE_CONFIG = {
 
     if (currentInvoiceItems.length === 0) return alert("Please add at least one item to invoice.");
 
-    const invNum = editingInvoiceId ? editingInvoiceId : "CSC-" + (1000 + appData.invoices.length + 1);
+    let invNum;
+    if (editingInvoiceId) {
+      invNum = editingInvoiceId;
+    } else {
+      const existingInvIds = new Set(appData.invoices.map(x => x.id));
+      let n = 1001;
+      while (existingInvIds.has("CSC-" + n)) n++;
+      invNum = "CSC-" + n;
+    }
 
     const invObj = {
       id: invNum,
@@ -4403,7 +4463,7 @@ const FIREBASE_CONFIG = {
         s.price = price;
       }
     } else {
-      appData.masterServices.push({ id: "srv_" + Date.now(), category: cat, name: name, price: price, deptFee: 0 });
+      appData.masterServices.push({ id: "srv_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8), category: cat, name: name, price: price, deptFee: 0 });
     }
 
     saveData();
