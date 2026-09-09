@@ -1,458 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-    (function() {
-        var buffer = window.__base44_preview_native_failures;
-        if (!buffer || buffer.version !== 1 || !Array.isArray(buffer.entries)) {
-            buffer = { version: 1, entries: [], listenersInstalled: false };
-            window.__base44_preview_native_failures = buffer;
-        }
-        if (buffer.listenersInstalled) return;
-        function value(object, key) {
-            return object && typeof object[key] === 'string' ? object[key] : '';
-        }
-        function append(message) {
-            if (!message) return;
-            var normalizedMessage = String(message).slice(0, 5000);
-            for (var index = buffer.entries.length - 1; index >= 0; index--) {
-                var existing = buffer.entries[index];
-                if (existing && existing.level === 'error' && existing.message === normalizedMessage) {
-                    buffer.entries.splice(index, 1);
-                }
-            }
-            buffer.entries.push({
-                level: 'error',
-                message: normalizedMessage,
-                timestamp: Date.now()
-            });
-            if (buffer.entries.length > 100) {
-                buffer.entries.splice(0, buffer.entries.length - 100);
-            }
-        }
-        buffer.append = append;
-        function handleError(event) {
-            var target = event && event.target;
-            var tagName = value(target, 'tagName').toLowerCase() || 'window';
-            var isModule = tagName === 'script' && value(target, 'type').toLowerCase() === 'module';
-            var resourceType = isModule ? 'module' : tagName;
-            var url = value(target, 'src') || value(target, 'href') || value(event, 'filename');
-            var detail = value(event, 'message') || value(event && event.error, 'message');
-            var prefix = tagName === 'window' ? 'Native browser error' : 'Failed to load ' + resourceType;
-            append(prefix + (url ? ' ' + url : '') + (detail ? ': ' + detail : ''));
-        }
-        function rejectionReason(reason) {
-            if (typeof reason === 'string') return reason;
-            var message = value(reason, 'message');
-            if (message) return message;
-            try { return JSON.stringify(reason) || String(reason); }
-            catch (e) { return String(reason); }
-        }
-        function handleRejection(event) {
-            append('Unhandled promise rejection: ' + rejectionReason(event && event.reason));
-        }
-        function handleCspViolation(event) {
-            var blockedUri = value(event, 'blockedURI') || 'resource';
-            var directive = value(event, 'violatedDirective');
-            append('Content Security Policy blocked ' + blockedUri + (directive ? ' (' + directive + ')' : ''));
-        }
-        function overlayText(root, selector) {
-            var element = root && root.querySelector(selector);
-            return value(element, 'textContent').trim();
-        }
-        function captureViteOverlay(overlay) {
-            var root = overlay && overlay.shadowRoot;
-            var message = overlayText(root, '.message-body');
-            if (!message) return;
-            var plugin = overlayText(root, '.plugin');
-            var details = ['Vite build error: ' + (plugin ? plugin + ' ' : '') + message];
-            var file = overlayText(root, '.file');
-            var frame = overlayText(root, '.frame');
-            var stack = overlayText(root, '.stack');
-            if (file) details.push('File: ' + file);
-            if (frame) details.push(frame);
-            if (stack) details.push(stack);
-            append(details.join(String.fromCharCode(10)));
-        }
-        function captureViteOverlays(node) {
-            if (!node || node.nodeType !== 1) return;
-            if (node.matches && node.matches('vite-error-overlay')) captureViteOverlay(node);
-            if (!node.querySelectorAll) return;
-            var overlays = node.querySelectorAll('vite-error-overlay');
-            for (var index = 0; index < overlays.length; index++) captureViteOverlay(overlays[index]);
-        }
-        window.addEventListener('error', handleError, true);
-        window.addEventListener('unhandledrejection', handleRejection);
-        window.addEventListener('securitypolicyviolation', handleCspViolation);
-        if (typeof MutationObserver !== 'undefined' && document.documentElement) {
-            captureViteOverlays(document.documentElement);
-            new MutationObserver(function(records) {
-                for (var recordIndex = 0; recordIndex < records.length; recordIndex++) {
-                    var nodes = records[recordIndex].addedNodes;
-                    for (var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex++) {
-                        captureViteOverlays(nodes[nodeIndex]);
-                    }
-                }
-            }).observe(document.documentElement, { childList: true, subtree: true });
-        }
-        buffer.listenersInstalled = true;
-    })();
-    </script>
-    <script data-preview-data-env-pin="true">
-    (function() {
-        var KEY = 'base44_data_env';
-        var APP_API_PATH = "/api/apps/6a9f0216ef5a59bd4af9ee76/";
-        var STORAGE_KEY = KEY + ':' + APP_API_PATH;
-        var API_ORIGINS = ["https://app.base44.com", "https://base44.app"].map(function(u) { return new URL(u).origin; });
-        var REQUEST_INIT_KEYS = [
-            'method', 'headers', 'credentials', 'mode', 'cache', 'redirect',
-            'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'signal', 'priority',
-        ];
-        var env = new URLSearchParams(window.location.search).get(KEY);
-        try {
-            if (env === 'dev' || env === 'prod') sessionStorage.setItem(STORAGE_KEY, env);
-            else env = sessionStorage.getItem(STORAGE_KEY);
-        } catch (e) {}
-        if (env !== 'dev' && env !== 'prod') return;
-        function pin(url) {
-            try {
-                var u = new URL(url, window.location.href);
-                if (u.origin !== window.location.origin && API_ORIGINS.indexOf(u.origin) === -1) return url;
-                if (!u.pathname.startsWith(APP_API_PATH)) return url;
-                // Privileged function/agent routes trust this app's Preview host,
-                // not a dev parameter sent to the generic SDK API origin.
-                if (u.origin !== window.location.origin && (
-                    u.pathname.startsWith(APP_API_PATH + 'functions/') ||
-                    u.pathname.startsWith(APP_API_PATH + 'agents/')
-                )) {
-                    u = new URL(u.pathname + u.search + u.hash, window.location.origin);
-                }
-                u.searchParams.set(KEY, env);
-                return u.toString();
-            } catch (e) { return url; }
-        }
-        var origFetch = window.fetch;
-        window.fetch = function(input, init) {
-            if (typeof input === 'string' || input instanceof URL) {
-                return origFetch.call(this, pin(String(input)), init);
-            }
-            if (!input || !input.url) return origFetch.call(this, input, init);
-            var pinned = pin(input.url);
-            if (pinned === input.url) return origFetch.call(this, input, init);
-            try {
-                input = new Request(input, init);
-                if (!input.keepalive || !input.body) {
-                    return origFetch.call(this, new Request(pinned, input));
-                }
-                // RequestInit exposes an existing body as a stream, which Fetch
-                // forbids with keepalive. Buffer only that case, after init overrides.
-                var self = this;
-                return input.blob().then(function(body) {
-                    var rebuilt = { body: body };
-                    REQUEST_INIT_KEYS.forEach(function(key) {
-                        if (input[key] !== undefined) rebuilt[key] = input[key];
-                    });
-                    return origFetch.call(self, new Request(pinned, rebuilt));
-                });
-            } catch (error) { return Promise.reject(error); }
-        };
-        var origOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url) {
-            arguments[1] = pin(String(url));
-            return origOpen.apply(this, arguments);
-        };
-    })();
-    </script><script defer data-preview-inject="true" data-app-id="6a9f0216ef5a59bd4af9ee76" data-preview-type="sandbox" data-rum-app-id="db50c921-10c3-4f12-bccb-950fa174b708" data-rum-client-token="pubfe8a4f2972b412b4556fd67e77f82cb4" data-dd-site="datadoghq.com" src="https://app.base44.com/builder-bridge.js?t=1788857735"></script>
-    <script>
-    (function() {
-        var IGNORE = { SCRIPT: 1, STYLE: 1, LINK: 1, META: 1, NOSCRIPT: 1, TEMPLATE: 1 };
-        const fire = () => window.parent.postMessage({ type: 'IFRAME_CONTENT_READY' }, '*');
-        function check() {
-            var body = document.body;
-            if (!body) return false;
-            for (var idx = 0; idx < body.children.length; idx++) {
-                if (!IGNORE[body.children[idx].tagName]) return true;
-            }
-            return false;
-        }
-        function start() {
-            if (check()) { fire(); return; }
-            var observer = new MutationObserver(function() {
-                if (check()) { fire(); observer.disconnect(); }
-            });
-            observer.observe(document.documentElement, { childList: true, subtree: true });
-        }
-        if (document.body) { start(); }
-        else { document.addEventListener('DOMContentLoaded', start, { once: true }); }
-    })();
-    </script>
-    <script>
-    (function() {
-        if (window.self === window.top) return;
-        var APP_ID = "6a9f0216ef5a59bd4af9ee76";
-        var PREVIEW_TYPE = "sandbox";
-        var on404 = false;
-        var booted = false;
-        function detect() { return !!document.querySelector('[data-source-location^="PageNotFound:"]'); }
-        function payload() { return { app_id: APP_ID, preview_type: PREVIEW_TYPE, url_path: window.location.pathname }; }
-        function tick() {
-            var now = detect();
-            if (now && !on404) {
-                on404 = true;
-                window.parent.postMessage({ type: 'PREVIEW_PAGE_NOT_FOUND', payload: payload() }, '*');
-            } else if (!now && (on404 || !booted)) {
-                // On first tick of a fresh document, emit a cleared signal even when
-                // not currently on a 404 — the parent may have latched is404=true from
-                // a previous document at the same URL (e.g. after an iframe reload).
-                on404 = false;
-                window.parent.postMessage({ type: 'PREVIEW_PAGE_NOT_FOUND_CLEARED', payload: payload() }, '*');
-            }
-            booted = true;
-        }
-        function start() {
-            tick();
-            new MutationObserver(tick).observe(document.body, { childList: true, subtree: true });
-        }
-        if (document.body) { start(); }
-        else { document.addEventListener('DOMContentLoaded', start, { once: true }); }
-    })();
-    </script>
-    <script>
-    (function() {
-        if (window.self === window.top) return;
-        function fire() { window.parent.postMessage({ type: 'REACT_ROOT_HAS_CHILDREN' }, '*'); }
-        function findRoot() {
-            return document.getElementById('root')
-                || document.getElementById('app')
-                || document.querySelector('[data-react-root]');
-        }
-        // One-shot: wait for DOMContentLoaded (static HTML parsed by then, so the
-        // Base44 convention <div id="root"> is either present or not coming),
-        // observe the root's childList until the first element child appears,
-        // then fire and disconnect. No tree-wide subtree observer.
-        function start() {
-            var root = findRoot();
-            if (!root) return;
-            if (root.childElementCount > 0) { fire(); return; }
-            var obs = new MutationObserver(function() {
-                if (root.childElementCount > 0) { fire(); obs.disconnect(); }
-            });
-            obs.observe(root, { childList: true });
-        }
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', start, { once: true });
-        } else { start(); }
-    })();
-    </script>
-    <script>
-    (function() {
-        if (window.self === window.top) return;
-        function postUnsupported(reason) {
-            window.parent.postMessage({
-                type: 'IFRAME_FIRST_CONTENTFUL_PAINT_UNSUPPORTED',
-                payload: { reason: reason, userAgent: navigator.userAgent }
-            }, '*');
-        }
-        if (typeof PerformanceObserver === 'undefined') {
-            postUnsupported('no_performance_observer');
-            return;
-        }
-        try {
-            var obs = new PerformanceObserver(function(list) {
-                var entries = list.getEntries();
-                for (var i = 0; i < entries.length; i++) {
-                    if (entries[i].name === 'first-contentful-paint') {
-                        obs.disconnect();
-                        window.parent.postMessage({ type: 'IFRAME_FIRST_CONTENTFUL_PAINT' }, '*');
-                        return;
-                    }
-                }
-            });
-            obs.observe({ type: 'paint', buffered: true });
-        } catch (e) {
-            postUnsupported('observe_threw:' + (e && e.name ? e.name : 'Error'));
-        }
-    })();
-    </script>
-    <script>
-    (function() {
-        if (window.self === window.top) return;
-        var APP_ID = "6a9f0216ef5a59bd4af9ee76";
-        var PREVIEW_TYPE = "sandbox";
-        var DEPS_PATH = '/node_modules/.vite/deps/';
-        var fired = false;
-        function isViteDep(url) {
-            return typeof url === 'string' && url.indexOf(DEPS_PATH) !== -1;
-        }
-        function looksFailed(entry) {
-            // HTTP failure status (Chrome 109+).
-            if (entry.responseStatus && entry.responseStatus >= 400) return true;
-            // Aborted / blocked / network-error: request ran, nothing decoded.
-            // decodedBodySize === 0 distinguishes from cache hits (Safari has no
-            // deliveryType, so we can't rely on it to exclude cached responses).
-            return entry.transferSize === 0
-                && entry.decodedBodySize === 0
-                && entry.duration > 0
-                && entry.responseEnd > 0;
-        }
-        function report(entry) {
-            if (fired) return;
-            fired = true;
-            var nativeBuffer = window.__base44_preview_native_failures;
-            if (nativeBuffer && typeof nativeBuffer.append === 'function') {
-                nativeBuffer.append('Failed to load module ' + entry.name);
-            }
-            window.parent.postMessage({
-                type: 'SANDBOX_VITE_DEPS_404',
-                payload: {
-                    app_id: APP_ID,
-                    preview_type: PREVIEW_TYPE,
-                    url: entry.name,
-                    initiator_type: entry.initiatorType,
-                    response_status: entry.responseStatus
-                }
-            }, '*');
-        }
-        new PerformanceObserver(function(list) {
-            var entries = list.getEntries();
-            for (var i = 0; i < entries.length; i++) {
-                if (isViteDep(entries[i].name) && looksFailed(entries[i])) {
-                    report(entries[i]);
-                    return;
-                }
-            }
-        }).observe({ type: 'resource', buffered: true });
-    })();
-    </script>
-    <script>
-    (function() {
-        if (typeof PerformanceObserver === 'undefined') return;
-        function modulePath(url) {
-            try {
-                var path = new URL(url, window.location.href).pathname;
-                // The bridge probes this standard SDK path opportunistically;
-                // legacy/custom apps are allowed not to provide it.
-                if (path === '/src/api/base44Client.js') return '';
-                if (path.indexOf('/node_modules/.vite/deps/') !== -1) return '';
-                return /[.](?:[cm]?[jt]sx?)$/i.test(path) ? path : '';
-            } catch (e) {
-                return '';
-            }
-        }
-        new PerformanceObserver(function(list) {
-            var entries = list.getEntries();
-            for (var index = 0; index < entries.length; index++) {
-                var entry = entries[index];
-                if (entry.initiatorType !== 'script' || entry.responseStatus !== 404) continue;
-                var path = modulePath(entry.name);
-                var buffer = window.__base44_preview_native_failures;
-                if (path && buffer && typeof buffer.append === 'function') {
-                    buffer.append('Module not found: ' + path);
-                }
-            }
-        }).observe({ type: 'resource', buffered: true });
-    })();
-    </script>
-    <script>
-    (function() {
-        if (window.self === window.top) return;
-        if (typeof performance === 'undefined' || typeof performance.getEntriesByType !== 'function') return;
-        var DEPS_PATH = '/node_modules/.vite/deps/';
-        var QUIESCENCE_MS = 1500;
-        var POLL_MS = 500;
-        var fired = false;
-        var intervalId = setInterval(function() {
-            if (fired) return;
-            var entries = performance.getEntriesByType('resource');
-            var lastDepEnd = 0;
-            for (var i = 0; i < entries.length; i++) {
-                if (entries[i].name.indexOf(DEPS_PATH) === -1) continue;
-                if (entries[i].responseEnd > lastDepEnd) lastDepEnd = entries[i].responseEnd;
-            }
-            if (lastDepEnd === 0) return;
-            if (performance.now() - lastDepEnd >= QUIESCENCE_MS) {
-                fired = true;
-                clearInterval(intervalId);
-                window.parent.postMessage({ type: 'IFRAME_VITE_DEPS_SETTLED' }, '*');
-            }
-        }, POLL_MS);
-    })();
-    </script>
-        <script type="module">
-        try {
-            const { base44 } = await import("/src/api/base44Client.js");
-            if (base44) {
-                Object.defineProperty(window, "base44_sdk", {
-                    value: base44,
-                    writable: false,
-                    configurable: true
-                });
-            }
-        } catch (e) {
-            // Some legacy/custom apps may not have the standard client module.
-            // Leave window.base44_sdk undefined; PreviewLens can fall back to UI/network checks.
-            window.parent.postMessage({ type: "PREVIEW_LENS_SDK_ATTACH_FAILED", error: String(e) }, "*");
-        }
-        </script>
-        <script type="module">
-        try {
-            const { createHotContext } = await import("/@vite/client");
-            const hot = createHotContext("/__builder-bridge-hmr");
-            const previewFEVersion = Number(new URLSearchParams(window.location.search).get("previewFE_version")) || 0;
-            hot.on("vite:ws:connect", () => window.parent.postMessage({ type: "SANDBOX_WS_CONNECT" }, "*"));
-            hot.on("vite:ws:disconnect", () => window.parent.postMessage({ type: "SANDBOX_WS_DISCONNECT" }, "*"));
-        
-            hot.on("vite:error", (payload) => {
-                const err = payload && payload.err && typeof payload.err === "object" ? payload.err : {};
-                const message = typeof err.message === "string" ? err.message : "Unknown build error";
-                const plugin = typeof err.plugin === "string" ? `[plugin:${err.plugin}] ` : "";
-                const details = [`Vite build error: ${plugin}${message}`];
-                const loc = err.loc && typeof err.loc === "object" ? err.loc : null;
-                let file = loc && typeof loc.file === "string"
-                    ? loc.file
-                    : (typeof err.id === "string" ? err.id : "");
-                if (file) {
-                    file = file.split("?")[0];
-                    if (loc && Number.isFinite(loc.line) && Number.isFinite(loc.column)) {
-                        file += `:${loc.line}:${loc.column}`;
-                    }
-                    details.push(`File: ${file}`);
-                }
-                if (typeof err.frame === "string" && err.frame.trim()) details.push(err.frame.trim());
-                if (typeof err.stack === "string" && err.stack.trim()) details.push(err.stack.trim());
-
-                const nativeBuffer = window.__base44_preview_native_failures;
-                if (!nativeBuffer || typeof nativeBuffer.append !== "function") return;
-                nativeBuffer.append(details.join(String.fromCharCode(10)));
-            });
-    
-            // The pending promise holds Vite's pageReload (it awaits listeners) so the parent swaps a fresh iframe; an editor that doesn't announce previewFE_version falls back to today's in-place reload.
-            hot.on("vite:beforeFullReload", () => {
-                window.parent.postMessage({ type: "sandbox:beforeFullReload" }, "*");
-                if (previewFEVersion > 0) return new Promise(() => {});
-            });
-        } catch (e) {
-            window.parent.postMessage({ type: "SANDBOX_WS_ATTACH_FAILED", error: String(e) }, "*");
-        }
-        </script>
-    <script>
-    (function() {
-        if (window.self === window.top) return;
-        var lastUrl = window.location.href;
-        function notify() {
-            var url = window.location.href;
-            if (url === lastUrl) return;
-            lastUrl = url;
-            window.parent.postMessage({ type: 'APP_CHANGED_URL', url: url }, '*');
-        }
-        var origPush = history.pushState.bind(history);
-        history.pushState = function() { origPush.apply(history, arguments); notify(); };
-        var origReplace = history.replaceState.bind(history);
-        history.replaceState = function() { origReplace.apply(history, arguments); notify(); };
-        window.addEventListener('popstate', notify);
-        window.parent.postMessage({ type: 'APP_CHANGED_URL', url: window.location.href }, '*');
-    })();
-    </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ATMOS Digital Solutions - Operational Hub</title>
@@ -2201,13 +1749,42 @@
         <input type="number" id="editLoggedFinalPay" readonly style="color: var(--accent-green); font-weight: 800;">
       </div>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="editSinglePaymentModeBox">
       <label>Destination / Mode</label>
       <select id="editLoggedPayMode">
         <option value="Cash Drawer">Cash Drawer</option>
         <option value="Bank/UPI">Bank / UPI</option>
         <option value="Receivables/Credit">Receivables / Credit</option>
       </select>
+    </div>
+
+    <div class="form-group" style="background: #f8fafc; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <label style="margin: 0; cursor: pointer;" for="editSplitPaymentToggle">
+          <i class="fa-solid fa-arrows-split-up-and-left" style="color: var(--primary);"></i> Enable Split Payment
+        </label>
+        <input type="checkbox" id="editSplitPaymentToggle" onchange="toggleEditSplitUI()" style="width: 18px; height: 18px; cursor: pointer;">
+      </div>
+      <div id="editSplitFieldsBox" style="display: none; border-top: 1px dashed var(--border); padding-top: 10px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 8px;">
+          <div>
+            <label style="font-size: 0.68rem;">Cash (₹)</label>
+            <input type="number" id="editSplitCash" value="0" min="0" oninput="updateEditSplitTracker()">
+          </div>
+          <div>
+            <label style="font-size: 0.68rem;">Bank/UPI (₹)</label>
+            <input type="number" id="editSplitBank" value="0" min="0" oninput="updateEditSplitTracker()">
+          </div>
+          <div>
+            <label style="font-size: 0.68rem;">Receivables (₹)</label>
+            <input type="number" id="editSplitReceivable" value="0" min="0" oninput="updateEditSplitTracker()">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Remaining: ₹<span id="editSplitRemainingVal">0.00</span></span>
+          <span id="editSplitTrackerBadge" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: #fffbeb; color: #b45309;">Split amounts must equal Final Pay</span>
+        </div>
+      </div>
     </div>
     <div style="display: flex; gap: 10px; margin-top: 16px;">
       <button style="flex: 1; background: var(--bg); color: var(--text-muted);" onclick="closeEditServiceModal()">Cancel</button>
@@ -2516,31 +2093,48 @@ const FIREBASE_CONFIG = {
     let staffIdx = 0;
     return {
       userAccounts: appData.users.map(u => {
-        let id = u.role === 'Admin' ? 'ADM-001' : 'STF-' + (101 + staffIdx++);
+        let id = (u.id !== undefined && u.id !== null) ? u.id : (u.role === 'Admin' ? 'ADM-001' : 'STF-' + (101 + staffIdx++));
         return { id: id, name: u.name, role: u.role, password: u.pass, mobile: u.mobile || '' };
       }),
       masterServices: appData.masterServices.map(s => ({
         id: s.id, category: s.category, name: s.name, price: s.price, defaultDeptFee: s.deptFee || 0
       })),
-      serviceEntries: appData.serviceLog.map(s => ({
+      serviceEntries: appData.serviceLog.slice().reverse().map(s => ({
         id: s.id, date: s.date, serviceName: s.desc, deptFee: s.deptFee || 0,
         serviceCharge: s.serviceCharge || 0, discount: s.discount || 0,
-        finalPay: s.total || 0, payMode: s.payMode === 'Split Payment' ? 'Cash Drawer' : s.payMode,
-        user: s.staff, notes: s.notes || "", timestamp: Date.now(), settled: s.payMode !== 'Receivables/Credit'
+        finalPay: s.total || 0, payMode: s.payMode,
+        isSplit: !!s.isSplit, splitCash: s.splitCash || 0, splitBank: s.splitBank || 0, splitReceivable: s.splitReceivable || 0,
+        user: s.staff, notes: s.notes || "", time: s.time || "", timestamp: s.timestamp || Date.now(),
+        settled: s.isSplit ? !(parseFloat(s.splitReceivable || 0) > 0) : (s.payMode !== 'Receivables/Credit')
       })),
-      expenseEntries: appData.expenseLog.map(e => ({
+      expenseEntries: appData.expenseLog.slice().reverse().map(e => ({
         id: e.id, date: e.date, category: e.category, description: e.desc,
-        amount: e.amount, payMode: e.payMode, user: e.staff, timestamp: Date.now()
+        amount: e.amount, payMode: e.payMode, user: e.staff, time: e.time || "", timestamp: e.timestamp || Date.now()
       })),
-      internalTransfers: appData.transferLog.map(t => ({
+      internalTransfers: appData.transferLog.slice().reverse().map(t => ({
         id: t.id, date: t.date, direction: t.direction, amount: t.amount,
-        user: t.staff, timestamp: Date.now()
+        user: t.staff, time: t.time || "", timestamp: t.timestamp || Date.now()
       })),
-      savedInvoices: appData.invoices.map(inv => ({
+      savedInvoices: appData.invoices.slice().reverse().map(inv => ({
         invNum: inv.id, date: inv.date, customerName: inv.customerName,
         customerPhone: inv.customerPhone, payMode: inv.payMode, items: inv.items, total: inv.total
       })),
-      attendanceLogs: [],
+      attendanceLogs: Object.keys(appData.attendance || {}).reduce(function(list, m) {
+        Object.keys(appData.attendance[m] || {}).forEach(function(u) {
+          Object.keys(appData.attendance[m][u] || {}).forEach(function(d) {
+            const rec = appData.attendance[m][u][d];
+            list.push({
+              user: u,
+              date: d,
+              firstLogin: rec.firstLogin || "",
+              lastActive: rec.lastActive || "",
+              status: rec.status || (rec.isLate ? "Late" : "On Time"),
+              timestamp: Date.parse(d + "T12:00:00") || Date.now()
+            });
+          });
+        });
+        return list;
+      }, []),
       openingBalancesMonthwise: appData.openingBalances,
       staffSalariesMonthwise: Object.keys(appData.monthlySalaries).reduce((acc, m) => {
         acc[m] = {};
@@ -2581,12 +2175,18 @@ const FIREBASE_CONFIG = {
           badge.innerHTML = '<i class="fa-solid fa-cloud"></i> Live Cloud Sync';
         }
         if (val) {
+          const masterBefore = JSON.stringify(appData.masterServices.map(s => [s.id, s.name, s.price, s.deptFee || 0]));
           appData = convertLegacyData(val);
           dedupeEntryIds();
           localStorage.setItem('ATMOS_HUB_DATA_2026', JSON.stringify(appData));
           refreshAllViews();
           isFirebaseSyncActive = true;
           normalizeAttendanceData();
+          /* keep the service dropdown ids in sync so selecting a service always fills its own price & dept fee */
+          const masterAfter = JSON.stringify(appData.masterServices.map(s => [s.id, s.name, s.price, s.deptFee || 0]));
+          if (masterBefore !== masterAfter) {
+            populateServiceDropdown();
+          }
         }
       });
     } catch (e) {
@@ -2626,6 +2226,7 @@ const FIREBASE_CONFIG = {
 
     if (Array.isArray(legacy.userAccounts) && legacy.userAccounts.length) {
       out.users = legacy.userAccounts.map(u => ({
+        id: u.id,
         name: u.name,
         role: u.role,
         pass: (u.password !== undefined && u.password !== null) ? u.password : (u.pass || ""),
@@ -2635,7 +2236,7 @@ const FIREBASE_CONFIG = {
 
     if (Array.isArray(legacy.masterServices) && legacy.masterServices.length) {
       out.masterServices = legacy.masterServices.map((s, i) => ({
-        id: 'srvL_' + (s.id !== undefined ? s.id : i),
+        id: (s.id !== undefined && s.id !== null && String(s.id).length > 0) ? s.id : ('srvL_' + i),
         category: s.category || "Standard Services",
         name: s.name || "",
         price: parseFloat(s.price) || 0,
@@ -2648,27 +2249,30 @@ const FIREBASE_CONFIG = {
         id: (e.id !== undefined && e.id !== null && String(e.id).length > 0) ? e.id : 'SRV_' + (Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 8)),
         date: e.date,
         time: e.time || istTimeFromTimestamp(e.timestamp),
+        timestamp: e.timestamp,
         desc: e.serviceName || e.desc || "",
         deptFee: parseFloat(e.deptFee) || 0,
         serviceCharge: parseFloat(e.serviceCharge) || 0,
         discount: parseFloat(e.discount) || 0,
         total: parseFloat(e.finalPay !== undefined ? e.finalPay : e.total) || 0,
         payMode: (e.payMode === 'Receivables/Credit' && e.settled) ? (e.settledDestination || 'Cash Drawer') : (e.payMode || 'Cash Drawer'),
-        isSplit: false,
-        splitCash: 0,
-        splitBank: 0,
-        splitReceivable: 0,
+        isSplit: !!(e.isSplit || e.payMode === 'Split Payment'),
+        splitCash: parseFloat(e.splitCash) || 0,
+        splitBank: parseFloat(e.splitBank) || 0,
+        splitReceivable: parseFloat(e.splitReceivable) || 0,
         staff: e.user || e.staff || "",
         notes: e.notes || ""
-      })).reverse();
-      out.serviceLog = converted;
+      }));
+      converted.forEach(c => { if (c.isSplit) c.payMode = 'Split Payment'; });
+      out.serviceLog = converted.reverse();
     }
 
     if (Array.isArray(legacy.expenseEntries)) {
       const converted = legacy.expenseEntries.map((e, i) => ({
         id: (e.id !== undefined && e.id !== null && String(e.id).length > 0) ? e.id : 'EXP_' + (Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 8)),
         date: e.date,
-        time: istTimeFromTimestamp(e.timestamp),
+        time: e.time || istTimeFromTimestamp(e.timestamp),
+        timestamp: e.timestamp,
         category: e.category || "",
         desc: e.description || e.desc || "",
         amount: parseFloat(e.amount) || 0,
@@ -2682,7 +2286,8 @@ const FIREBASE_CONFIG = {
       const converted = legacy.internalTransfers.map((e, i) => ({
         id: (e.id !== undefined && e.id !== null && String(e.id).length > 0) ? e.id : 'TRF_' + (Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 8)),
         date: e.date,
-        time: istTimeFromTimestamp(e.timestamp),
+        time: e.time || istTimeFromTimestamp(e.timestamp),
+        timestamp: e.timestamp,
         direction: e.direction === 'BankToCash' ? 'BankToCash' : 'CashToBank',
         amount: parseFloat(e.amount) || 0,
         staff: e.user || e.staff || ""
@@ -2711,7 +2316,7 @@ const FIREBASE_CONFIG = {
         if (!attd[month]) attd[month] = {};
         if (!attd[month][a.user]) attd[month][a.user] = {};
         const mins = attendanceMinutes(a.firstLogin || a.firstCheckIn || "");
-        const lateFlag = (mins === -1) ? (a.status === 'Late') : (mins > 565);
+        const lateFlag = (a.status === 'Late') || (mins !== -1 && mins > 565);
         attd[month][a.user][a.date] = {
           firstLogin: a.firstLogin || a.firstCheckIn || "",
           lastActive: a.lastActive || a.firstLogin || a.firstCheckIn || "",
@@ -2719,7 +2324,18 @@ const FIREBASE_CONFIG = {
           isLate: lateFlag
         };
       });
-      out.attendance = { ...attd, ...(out.attendance || {}) };
+      /* deep-merge: remote records overlay local so every device keeps the full attendance history */
+      const mergedAttd = { ...(out.attendance || {}) };
+      Object.keys(attd).forEach(function(m) {
+        if (!mergedAttd[m]) mergedAttd[m] = {};
+        Object.keys(attd[m]).forEach(function(u) {
+          if (!mergedAttd[m][u]) mergedAttd[m][u] = {};
+          Object.keys(attd[m][u]).forEach(function(d) {
+            mergedAttd[m][u][d] = attd[m][u][d];
+          });
+        });
+      });
+      out.attendance = mergedAttd;
     }
 
     if (legacy.openingBalancesMonthwise && typeof legacy.openingBalancesMonthwise === 'object') {
@@ -2801,6 +2417,13 @@ const FIREBASE_CONFIG = {
     return h * 60 + min;
   }
 
+  /* Sort value for newest-first ordering of ledger entries (date + entry time) */
+  function entryDateTimeValue(e) {
+    const d = Date.parse((e.date || "") + "T00:00:00");
+    const m = attendanceMinutes(e.time || "");
+    return (isNaN(d) ? 0 : d) + (m === -1 ? 0 : m * 60000);
+  }
+
   /* Re-derive Late / On-time from the check-in time (cutoff 9:25 AM IST) - repairs migrated records */
   function normalizeAttendanceData() {
     let changed = false;
@@ -2809,14 +2432,13 @@ const FIREBASE_CONFIG = {
         Object.keys(appData.attendance[m][u] || {}).forEach(d => {
           const rec = appData.attendance[m][u][d];
           if (!rec || !rec.firstLogin) return;
+          if (rec.status) return; /* keep the originally recorded Late / On-time judgement */
           const mins = attendanceMinutes(rec.firstLogin);
           if (mins === -1) return;
           const lateFlag = mins > 565;
-          if (rec.isLate !== lateFlag || rec.status !== (lateFlag ? 'Late' : 'On-time')) {
-            rec.isLate = lateFlag;
-            rec.status = lateFlag ? 'Late' : 'On-time';
-            changed = true;
-          }
+          rec.isLate = lateFlag;
+          rec.status = lateFlag ? 'Late' : 'On-time';
+          changed = true;
         });
       });
     });
@@ -3028,7 +2650,7 @@ const FIREBASE_CONFIG = {
       // Department fee is paid out to the department from the Bank/UPI balance (same rule as the previous version)
       if (deptFee > 0) bank -= deptFee;
 
-      if (s.isSplit) {
+      if (s.isSplit || s.payMode === 'Split Payment') {
         cash += parseFloat(s.splitCash || 0);
         bank += parseFloat(s.splitBank || 0);
         credit += parseFloat(s.splitReceivable || 0);
@@ -3129,7 +2751,7 @@ const FIREBASE_CONFIG = {
     const tbody = document.getElementById('staffReceivablesTableBody');
     tbody.innerHTML = '';
 
-    const pendingReceivables = appData.serviceLog.filter(s => s.payMode === 'Receivables/Credit' || (s.isSplit && parseFloat(s.splitReceivable || 0) > 0));
+    const pendingReceivables = appData.serviceLog.filter(s => s.payMode === 'Receivables/Credit' || ((s.isSplit || s.payMode === 'Split Payment') && parseFloat(s.splitReceivable || 0) > 0));
 
     if (pendingReceivables.length === 0) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No outstanding receivables found.</td></tr>`;
@@ -3137,7 +2759,7 @@ const FIREBASE_CONFIG = {
     }
 
     pendingReceivables.forEach(s => {
-      const dueAmt = s.isSplit ? parseFloat(s.splitReceivable || 0) : parseFloat(s.total || 0);
+      const dueAmt = (s.isSplit || s.payMode === 'Split Payment') ? parseFloat(s.splitReceivable || 0) : parseFloat(s.total || 0);
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><input type="radio" name="receivableSelectRadio" value="${s.id}"></td>
@@ -3195,7 +2817,7 @@ const FIREBASE_CONFIG = {
 
     const dest = document.getElementById('receivableSettleDestination').value;
 
-    if (s.isSplit) {
+    if (s.isSplit || s.payMode === 'Split Payment') {
       const recAmt = parseFloat(s.splitReceivable || 0);
       if (dest === 'Cash Drawer') s.splitCash = parseFloat(s.splitCash || 0) + recAmt;
       else s.splitBank = parseFloat(s.splitBank || 0) + recAmt;
@@ -3215,6 +2837,14 @@ const FIREBASE_CONFIG = {
   function populateServiceDropdown() {
     const select = document.getElementById('serviceSelect');
     select.innerHTML = '';
+
+    // Placeholder option - shown by default and after each logged transaction
+    const placeholder = document.createElement('option');
+    placeholder.value = "";
+    placeholder.innerText = "Select a Service";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
 
     // Sort services alphabetically by name
     const sorted = [...appData.masterServices].sort((a, b) => a.name.localeCompare(b.name));
@@ -3367,6 +2997,7 @@ const FIREBASE_CONFIG = {
       id: "SRV_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
       date: date,
       time: getISTTimeStr(),
+      timestamp: Date.now(),
       desc: desc,
       deptFee: deptFee,
       serviceCharge: srvCharge,
@@ -3392,9 +3023,18 @@ const FIREBASE_CONFIG = {
     saveData();
     alert("Service transaction logged successfully!");
 
-    // Reset form
+    // Reset form - back to "Select a Service" with all fields cleared
     document.getElementById('serviceNotesInput').value = '';
     document.getElementById('discountAmt').value = 0;
+    document.getElementById('deptFeeInput').value = 0;
+    document.getElementById('basePrice').value = 0;
+    document.getElementById('serviceSelect').value = '';
+    document.getElementById('customServiceNameInput').value = '';
+    document.getElementById('customServiceDetailsInput').value = '';
+    document.getElementById('customServiceEntryGroup').style.display = 'none';
+    document.getElementById('splitCashInput').value = 0;
+    document.getElementById('splitBankInput').value = 0;
+    document.getElementById('splitReceivableInput').value = 0;
     document.getElementById('splitPaymentToggle').checked = false;
     toggleSplitPaymentUI();
     calculateFinalPrice();
@@ -3449,7 +3089,7 @@ const FIREBASE_CONFIG = {
     const isClosed = !!appData.closedMonths[month];
     document.getElementById('servicesClosedMonthBanner').style.display = isClosed ? 'flex' : 'none';
 
-    const logs = appData.serviceLog.filter(s => s.date.substring(0, 7) === month);
+    const logs = appData.serviceLog.filter(s => s.date.substring(0, 7) === month).sort((a, b) => entryDateTimeValue(b) - entryDateTimeValue(a));
 
     let totalCount = logs.length;
     let totalDeptFee = 0;
@@ -3466,7 +3106,13 @@ const FIREBASE_CONFIG = {
       let modeBadge = `<span class="badge badge-cash">${s.payMode}</span>`;
       if (s.payMode === 'Bank/UPI') modeBadge = `<span class="badge badge-upi">${s.payMode}</span>`;
       else if (s.payMode === 'Receivables/Credit') modeBadge = `<span class="badge badge-credit">${s.payMode}</span>`;
-      else if (s.isSplit) modeBadge = `<span class="badge badge-split">Split Payment</span>`;
+      else if (s.isSplit) {
+        const legs = [];
+        if (parseFloat(s.splitCash || 0) > 0) legs.push(`Cash ₹${parseFloat(s.splitCash).toFixed(2)}`);
+        if (parseFloat(s.splitBank || 0) > 0) legs.push(`Bank/UPI ₹${parseFloat(s.splitBank).toFixed(2)}`);
+        if (parseFloat(s.splitReceivable || 0) > 0) legs.push(`Receivables ₹${parseFloat(s.splitReceivable).toFixed(2)}`);
+        modeBadge = `<span class="badge badge-split">Split Payment</span><br><span style="font-size:0.68rem; color:var(--text-muted);">${legs.length ? legs.join(' + ') : 'No split amounts recorded'}</span>`;
+      }
 
       tr.innerHTML = `
         <td>${s.date} <span style="font-size:0.75rem; color:var(--text-muted);">${s.time || ''}</span></td>
@@ -3512,6 +3158,11 @@ const FIREBASE_CONFIG = {
     document.getElementById('editLoggedFinalPay').value = s.total;
     document.getElementById('editLoggedServiceNotes').value = s.notes || '';
     document.getElementById('editLoggedPayMode').value = s.payMode === 'Split Payment' ? 'Cash Drawer' : s.payMode;
+    document.getElementById('editSplitPaymentToggle').checked = !!s.isSplit;
+    document.getElementById('editSplitCash').value = s.isSplit ? (s.splitCash || 0) : 0;
+    document.getElementById('editSplitBank').value = s.isSplit ? (s.splitBank || 0) : 0;
+    document.getElementById('editSplitReceivable').value = s.isSplit ? (s.splitReceivable || 0) : 0;
+    toggleEditSplitUI();
 
     document.getElementById('editServiceModal').style.display = 'flex';
   }
@@ -3525,6 +3176,37 @@ const FIREBASE_CONFIG = {
     const srv = parseFloat(document.getElementById('editLoggedServiceCharge').value || 0);
     const disc = parseFloat(document.getElementById('editLoggedDiscount').value || 0);
     document.getElementById('editLoggedFinalPay').value = Math.max(0, (dept + srv) - disc);
+    updateEditSplitTracker();
+  }
+
+  function toggleEditSplitUI() {
+    const isSplit = document.getElementById('editSplitPaymentToggle').checked;
+    document.getElementById('editSinglePaymentModeBox').style.display = isSplit ? 'none' : 'block';
+    document.getElementById('editSplitFieldsBox').style.display = isSplit ? 'block' : 'none';
+    updateEditSplitTracker();
+  }
+
+  function updateEditSplitTracker() {
+    if (!document.getElementById('editSplitPaymentToggle').checked) return;
+
+    const total = parseFloat(document.getElementById('editLoggedFinalPay').value || 0);
+    const cash = parseFloat(document.getElementById('editSplitCash').value || 0);
+    const bank = parseFloat(document.getElementById('editSplitBank').value || 0);
+    const rec = parseFloat(document.getElementById('editSplitReceivable').value || 0);
+
+    const remaining = total - (cash + bank + rec);
+    document.getElementById('editSplitRemainingVal').innerText = remaining.toFixed(2);
+
+    const badge = document.getElementById('editSplitTrackerBadge');
+    if (Math.abs(remaining) < 0.01) {
+      badge.style.background = '#dcfce7';
+      badge.style.color = '#15803d';
+      badge.innerText = "✓ Split Payment Balanced";
+    } else {
+      badge.style.background = '#fffbeb';
+      badge.style.color = '#b45309';
+      badge.innerText = "Split amounts must equal Final Pay";
+    }
   }
 
   function saveEditedService() {
@@ -3539,8 +3221,27 @@ const FIREBASE_CONFIG = {
     s.discount = parseFloat(document.getElementById('editLoggedDiscount').value || 0);
     s.total = parseFloat(document.getElementById('editLoggedFinalPay').value || 0);
     s.notes = document.getElementById('editLoggedServiceNotes').value.trim();
-    s.payMode = document.getElementById('editLoggedPayMode').value;
-    s.isSplit = false;
+
+    if (document.getElementById('editSplitPaymentToggle').checked) {
+      const splitCash = parseFloat(document.getElementById('editSplitCash').value || 0);
+      const splitBank = parseFloat(document.getElementById('editSplitBank').value || 0);
+      const splitReceivable = parseFloat(document.getElementById('editSplitReceivable').value || 0);
+      const splitSum = splitCash + splitBank + splitReceivable;
+      if (Math.abs(splitSum - s.total) > 0.01) {
+        return alert(`Split payment amounts (₹${splitSum.toFixed(2)}) must strictly equal the Final Pay (₹${s.total.toFixed(2)}).`);
+      }
+      s.payMode = 'Split Payment';
+      s.isSplit = true;
+      s.splitCash = splitCash;
+      s.splitBank = splitBank;
+      s.splitReceivable = splitReceivable;
+    } else {
+      s.payMode = document.getElementById('editLoggedPayMode').value;
+      s.isSplit = false;
+      s.splitCash = 0;
+      s.splitBank = 0;
+      s.splitReceivable = 0;
+    }
 
     saveData();
     closeEditServiceModal();
@@ -3570,6 +3271,7 @@ const FIREBASE_CONFIG = {
       id: "EXP_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
       date: date,
       time: getISTTimeStr(),
+      timestamp: Date.now(),
       category: category,
       desc: desc,
       amount: amount,
@@ -3597,7 +3299,7 @@ const FIREBASE_CONFIG = {
     document.getElementById('expDispCashBal').innerText = `₹${bal.cash.toFixed(2)}`;
     document.getElementById('expDispBankBal').innerText = `₹${bal.bank.toFixed(2)}`;
 
-    const logs = appData.expenseLog.filter(e => e.date.substring(0, 7) === month);
+    const logs = appData.expenseLog.filter(e => e.date.substring(0, 7) === month).sort((a, b) => entryDateTimeValue(b) - entryDateTimeValue(a));
     let totalExp = 0;
 
     const tbody = document.getElementById('expenseHistoryTable');
@@ -3688,6 +3390,7 @@ const FIREBASE_CONFIG = {
       id: "TRF_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
       date: date,
       time: getISTTimeStr(),
+      timestamp: Date.now(),
       direction: direction,
       amount: amount,
       staff: currentUser.name
@@ -3706,7 +3409,7 @@ const FIREBASE_CONFIG = {
     const isClosed = !!appData.closedMonths[month];
     document.getElementById('transferClosedMonthBanner').style.display = isClosed ? 'flex' : 'none';
 
-    const logs = appData.transferLog.filter(t => t.date.substring(0, 7) === month);
+    const logs = appData.transferLog.filter(t => t.date.substring(0, 7) === month).sort((a, b) => entryDateTimeValue(b) - entryDateTimeValue(a));
     const tbody = document.getElementById('transferHistoryTable');
     tbody.innerHTML = '';
 
@@ -4058,7 +3761,7 @@ const FIREBASE_CONFIG = {
     appData.serviceLog.forEach(s => {
       if (s.date.substring(0, 7) < month) {
         if (s.payMode === 'Receivables/Credit') preservedRec += parseFloat(s.total || 0);
-        else if (s.isSplit) preservedRec += parseFloat(s.splitReceivable || 0);
+        else if (s.isSplit || s.payMode === 'Split Payment') preservedRec += parseFloat(s.splitReceivable || 0);
       }
     });
 
