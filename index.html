@@ -634,6 +634,54 @@
       </div>
     </div>
 
+    <!-- STAFF MASTER SERVICE CATALOGUE -->
+    <div id="staffMasterCatalogCard" class="app-card" style="display: none; margin-top: 20px;">
+      <div style="margin-bottom: 16px;">
+        <h3 style="font-size: 1.1rem; font-weight: 900; color: var(--atmos-navy); text-transform: uppercase;">
+          <i class="fa-solid fa-concierge-bell" style="color: var(--atmos-red); margin-right: 6px;"></i> Master Service Catalogue
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Shared service catalog. Add new services available to all staff and admin.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        <div>
+          <form onsubmit="saveStaffMasterService(event)">
+            <div class="form-group">
+              <label>Service Category</label>
+              <select id="staffNewServiceCategory" onchange="updateStaffDeptFeeVisibility()">
+                <option value="Standard Services">Standard Services</option>
+                <option value="Custom Utility & Bill Services">Custom Utility & Bill Services (KSEB, KWA, etc.)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Service Name</label>
+              <input type="text" id="staffNewServiceName" placeholder="e.g. KSEB Bill Payment, KWA, Recharge" required>
+            </div>
+            <div class="form-group">
+              <label>Standard Service Charge (₹)</label>
+              <input type="number" id="staffNewServicePrice" min="0" placeholder="e.g. 30" required>
+            </div>
+            <div class="form-group" id="staffDeptFeeGroup" style="display: none;">
+              <label>Default Department Fee (₹)</label>
+              <input type="number" id="staffNewServiceDeptFee" min="0" value="0" placeholder="e.g. 50">
+            </div>
+            <button type="submit" class="btn-primary"><i class="fa-solid fa-plus"></i> Add to Master Catalog</button>
+          </form>
+        </div>
+
+        <div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr><th>Category</th><th>Service Name</th><th>Price</th></tr>
+              </thead>
+              <tbody id="staffMasterServicesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- TECHNICAL SUPPORT BOX -->
     <div class="support-card">
       <div class="support-icon"><i class="fa-solid fa-headset"></i></div>
@@ -719,7 +767,7 @@
 
             <div id="singlePaymentModeBox">
               <label>Payment Mode / Destination</label>
-              <select id="payMode">
+              <select id="payMode" onchange="updateReceivableNameVisibility()">
                 <option value="Cash Drawer">Cash Drawer</option>
                 <option value="Bank/UPI">Bank / UPI</option>
                 <option value="Receivables/Credit">Receivables / Credit (Pay Later)</option>
@@ -747,6 +795,12 @@
             </div>
           </div>
 
+          <!-- RECEIVABLE PERSON NAME (required when receivable amount > 0) -->
+          <div class="form-group" id="receivablePersonNameGroup" style="display: none; background: var(--accent-purple-bg); padding: 12px; border-radius: var(--radius-md); border: 1px dashed var(--accent-purple);">
+            <label style="color: var(--accent-purple);"><i class="fa-solid fa-user"></i> Receivable Person Name (Required)</label>
+            <input type="text" id="receivablePersonName" placeholder="Enter customer/person name for this receivable">
+          </div>
+
           <button type="submit" class="btn-primary" style="margin-top: 8px;">Complete & Log Transaction</button>
         </form>
       </div>
@@ -758,7 +812,7 @@
             <h3 style="font-size: 1.05rem; font-weight: 800;">Services Terminal Overview</h3>
             <div class="month-picker-box">
               <label>Month:</label>
-              <input type="month" id="serviceOverviewMonthPicker" onchange="renderServicesTab()">
+              <input type="month" id="serviceOverviewMonthPicker" onchange="document.getElementById('serviceLogMonthPicker').value=this.value; renderServicesTab()">
             </div>
           </div>
 
@@ -835,7 +889,7 @@
         </div>
         <div class="month-picker-box">
           <label>Operating Month:</label>
-          <input type="month" id="shopBalancesMonthPicker" onchange="renderExpenseTab()">
+          <input type="month" id="shopBalancesMonthPicker" onchange="document.getElementById('expenseLogMonthPicker').value=this.value; renderExpenseTab()">
         </div>
       </div>
 
@@ -1451,7 +1505,7 @@
             <input type="hidden" id="editServiceId" value="">
             <div class="form-group">
               <label>Service Category</label>
-              <select id="newServiceCategory">
+              <select id="newServiceCategory" onchange="updateAdminDeptFeeVisibility()">
                 <option value="Standard Services">Standard Services</option>
                 <option value="Custom Utility & Bill Services">Custom Utility & Bill Services (KSEB, KWA, etc.)</option>
               </select>
@@ -1751,7 +1805,7 @@
     </div>
     <div class="form-group" id="editSinglePaymentModeBox">
       <label>Destination / Mode</label>
-      <select id="editLoggedPayMode">
+      <select id="editLoggedPayMode" onchange="updateEditReceivableNameVisibility()">
         <option value="Cash Drawer">Cash Drawer</option>
         <option value="Bank/UPI">Bank / UPI</option>
         <option value="Receivables/Credit">Receivables / Credit</option>
@@ -1785,6 +1839,10 @@
           <span id="editSplitTrackerBadge" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: #fffbeb; color: #b45309;">Split amounts must equal Final Pay</span>
         </div>
       </div>
+    </div>
+    <div class="form-group" id="editReceivablePersonNameGroup" style="display: none; background: var(--accent-purple-bg); padding: 12px; border-radius: var(--radius-md); border: 1px dashed var(--accent-purple);">
+      <label style="color: var(--accent-purple);"><i class="fa-solid fa-user"></i> Receivable Person Name</label>
+      <input type="text" id="editReceivablePersonName" placeholder="Enter customer/person name for this receivable">
     </div>
     <div style="display: flex; gap: 10px; margin-top: 16px;">
       <button style="flex: 1; background: var(--bg); color: var(--text-muted);" onclick="closeEditServiceModal()">Cancel</button>
@@ -2105,6 +2163,7 @@ const FIREBASE_CONFIG = {
         finalPay: s.total || 0, payMode: s.payMode,
         isSplit: !!s.isSplit, splitCash: s.splitCash || 0, splitBank: s.splitBank || 0, splitReceivable: s.splitReceivable || 0,
         user: s.staff, notes: s.notes || "", time: s.time || "", timestamp: s.timestamp || Date.now(),
+        receivablePersonName: s.receivablePersonName || "",
         settled: s.isSplit ? !(parseFloat(s.splitReceivable || 0) > 0) : (s.payMode !== 'Receivables/Credit')
       })),
       expenseEntries: appData.expenseLog.slice().reverse().map(e => ({
@@ -2261,7 +2320,8 @@ const FIREBASE_CONFIG = {
         splitBank: parseFloat(e.splitBank) || 0,
         splitReceivable: parseFloat(e.splitReceivable) || 0,
         staff: e.user || e.staff || "",
-        notes: e.notes || ""
+        notes: e.notes || "",
+        receivablePersonName: e.receivablePersonName || ""
       }));
       converted.forEach(c => { if (c.isSplit) c.payMode = 'Split Payment'; });
       out.serviceLog = converted.reverse();
@@ -2701,6 +2761,57 @@ const FIREBASE_CONFIG = {
 
     renderDashboardOverviewForDate();
     renderStaffControlsArea();
+    renderStaffMasterCatalog();
+  }
+
+  /* STAFF MASTER SERVICE CATALOGUE (shared with Admin - same appData.masterServices) */
+  function renderStaffMasterCatalog() {
+    const isStaff = currentUser && currentUser.role === 'Staff';
+    const card = document.getElementById('staffMasterCatalogCard');
+    if (card) card.style.display = isStaff ? 'block' : 'none';
+    if (!isStaff) return;
+
+    const tbody = document.getElementById('staffMasterServicesTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    appData.masterServices.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="badge badge-std-cat">${s.category}</span></td>
+        <td><strong>${s.name}</strong></td>
+        <td style="font-weight:800;">₹${parseFloat(s.price || 0).toFixed(2)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function saveStaffMasterService(e) {
+    e.preventDefault();
+    const cat = document.getElementById('staffNewServiceCategory').value;
+    const name = document.getElementById('staffNewServiceName').value.trim();
+    const price = parseFloat(document.getElementById('staffNewServicePrice').value || 0);
+    const deptFee = parseFloat(document.getElementById('staffNewServiceDeptFee').value || 0);
+
+    if (!name) return alert("Please enter a service name.");
+
+    appData.masterServices.push({
+      id: "srv_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
+      category: cat,
+      name: name,
+      price: price,
+      deptFee: (cat === 'Custom Utility & Bill Services') ? deptFee : 0
+    });
+
+    saveData();
+    alert("Service added to Master Catalog successfully!");
+    document.getElementById('staffNewServiceName').value = '';
+    document.getElementById('staffNewServicePrice').value = '';
+    document.getElementById('staffNewServiceDeptFee').value = 0;
+    updateStaffDeptFeeVisibility();
+    populateServiceDropdown();
+    renderStaffMasterCatalog();
+    renderMasterCatalogTable();
   }
 
   function renderDashboardOverviewForDate() {
@@ -2760,11 +2871,12 @@ const FIREBASE_CONFIG = {
 
     pendingReceivables.forEach(s => {
       const dueAmt = (s.isSplit || s.payMode === 'Split Payment') ? parseFloat(s.splitReceivable || 0) : parseFloat(s.total || 0);
+      const personName = s.receivablePersonName || '';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><input type="radio" name="receivableSelectRadio" value="${s.id}"></td>
         <td>${s.date}</td>
-        <td>${s.desc}</td>
+        <td>${s.desc}${personName ? `<br><span style="font-size:0.72rem; color:var(--accent-purple); font-weight:700;"><i class="fa-solid fa-user"></i> ${personName}</span>` : ''}</td>
         <td>₹${parseFloat(s.deptFee || 0).toFixed(2)}</td>
         <td>₹${parseFloat(s.serviceCharge || 0).toFixed(2)}</td>
         <td style="font-weight:800; color:var(--accent-purple);">₹${dueAmt.toFixed(2)}</td>
@@ -2900,13 +3012,34 @@ const FIREBASE_CONFIG = {
       customBox.style.display = 'block';
     } else {
       customBox.style.display = 'none';
+      document.getElementById('customServiceNameInput').value = '';
+      document.getElementById('customServiceDetailsInput').value = '';
     }
+
+    // Clear stale values from previous service/transaction
+    document.getElementById('discountAmt').value = 0;
+    document.getElementById('splitCashInput').value = 0;
+    document.getElementById('splitBankInput').value = 0;
+    document.getElementById('splitReceivableInput').value = 0;
+    document.getElementById('splitPaymentToggle').checked = false;
+    document.getElementById('singlePaymentModeBox').style.display = 'block';
+    document.getElementById('splitPaymentFieldsBox').style.display = 'none';
+    if (document.getElementById('receivablePersonName')) document.getElementById('receivablePersonName').value = '';
 
     if (service) {
       document.getElementById('basePrice').value = service.price || 0;
       document.getElementById('deptFeeInput').value = service.deptFee || 0;
       calculateFinalPrice();
+    } else {
+      document.getElementById('basePrice').value = 0;
+      document.getElementById('deptFeeInput').value = 0;
+      document.getElementById('finalPrice').value = 0;
     }
+
+    // Always refresh split remaining display and receivable name visibility
+    // (works whether toggle is ON or OFF)
+    updateSplitRemainingDisplay();
+    updateReceivableNameVisibility();
   }
 
   function calculateFinalPrice() {
@@ -2916,6 +3049,7 @@ const FIREBASE_CONFIG = {
     const finalVal = Math.max(0, (dept + srv) - disc);
     document.getElementById('finalPrice').value = finalVal;
     updateSplitBalanceTracker();
+    updateReceivableNameVisibility();
   }
 
   function toggleSplitPaymentUI() {
@@ -2923,29 +3057,60 @@ const FIREBASE_CONFIG = {
     document.getElementById('singlePaymentModeBox').style.display = isSplit ? 'none' : 'block';
     document.getElementById('splitPaymentFieldsBox').style.display = isSplit ? 'block' : 'none';
     updateSplitBalanceTracker();
+    updateReceivableNameVisibility();
   }
 
-  function updateSplitBalanceTracker() {
-    if (!document.getElementById('splitPaymentToggle').checked) return;
-
+  /* Always updates the split remaining display + receivable name visibility.
+     Works whether the split toggle is ON or OFF, so selecting a new service
+     or typing in any split input immediately refreshes the remaining balance. */
+  function updateSplitRemainingDisplay() {
     const total = parseFloat(document.getElementById('finalPrice').value || 0);
     const cash = parseFloat(document.getElementById('splitCashInput').value || 0);
     const bank = parseFloat(document.getElementById('splitBankInput').value || 0);
     const rec = parseFloat(document.getElementById('splitReceivableInput').value || 0);
 
     const remaining = total - (cash + bank + rec);
-    document.getElementById('splitRemainingVal').innerText = remaining.toFixed(2);
+    const remEl = document.getElementById('splitRemainingVal');
+    if (remEl) remEl.innerText = remaining.toFixed(2);
 
     const badge = document.getElementById('splitTrackerBadge');
-    if (Math.abs(remaining) < 0.01) {
-      badge.style.background = '#dcfce7';
-      badge.style.color = '#15803d';
-      badge.innerText = "✓ Split Payment Balanced";
-    } else {
-      badge.style.background = '#fffbeb';
-      badge.style.color = '#b45309';
-      badge.innerText = `Remaining Balance to Allocate: ₹${remaining.toFixed(2)}`;
+    if (badge) {
+      if (Math.abs(remaining) < 0.01) {
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#15803d';
+        badge.innerText = "✓ Split Payment Balanced";
+      } else if (remaining < 0) {
+        badge.style.background = '#fee2e2';
+        badge.style.color = '#991b1b';
+        badge.innerText = `⚠ Over-allocated by ₹${Math.abs(remaining).toFixed(2)} — reduce amounts to match total`;
+      } else {
+        badge.style.background = '#fffbeb';
+        badge.style.color = '#b45309';
+        badge.innerText = `Remaining Balance to Allocate: ₹${remaining.toFixed(2)}`;
+      }
     }
+  }
+
+  function updateSplitBalanceTracker() {
+    updateReceivableNameVisibility();
+    updateSplitRemainingDisplay();
+  }
+
+  function updateReceivableNameVisibility() {
+    const isSplit = document.getElementById('splitPaymentToggle').checked;
+    let hasReceivable = false;
+
+    if (isSplit) {
+      const recVal = parseFloat(document.getElementById('splitReceivableInput').value || 0);
+      hasReceivable = recVal > 0;
+    } else {
+      const payMode = document.getElementById('payMode').value;
+      const total = parseFloat(document.getElementById('finalPrice').value || 0);
+      hasReceivable = (payMode === 'Receivables/Credit' && total > 0);
+    }
+
+    const group = document.getElementById('receivablePersonNameGroup');
+    if (group) group.style.display = hasReceivable ? 'block' : 'none';
   }
 
   function recordServiceEntry(e) {
@@ -2993,6 +3158,16 @@ const FIREBASE_CONFIG = {
       payMode = "Split Payment";
     }
 
+    // Validate receivable person name
+    let receivableAmt = isSplit ? splitReceivable : (payMode === 'Receivables/Credit' ? total : 0);
+    let receivablePersonName = '';
+    if (receivableAmt > 0) {
+      receivablePersonName = document.getElementById('receivablePersonName').value.trim();
+      if (!receivablePersonName) {
+        return alert("Please enter the Receivable Person Name — it is required when a receivable amount is allocated.");
+      }
+    }
+
     const newRecord = {
       id: "SRV_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
       date: date,
@@ -3009,7 +3184,8 @@ const FIREBASE_CONFIG = {
       splitBank: splitBank,
       splitReceivable: splitReceivable,
       staff: currentUser.name,
-      notes: serviceNotes
+      notes: serviceNotes,
+      receivablePersonName: receivablePersonName
     };
 
     appData.serviceLog.unshift(newRecord);
@@ -3036,6 +3212,7 @@ const FIREBASE_CONFIG = {
     document.getElementById('splitBankInput').value = 0;
     document.getElementById('splitReceivableInput').value = 0;
     document.getElementById('splitPaymentToggle').checked = false;
+    if (document.getElementById('receivablePersonName')) document.getElementById('receivablePersonName').value = '';
     toggleSplitPaymentUI();
     calculateFinalPrice();
     refreshAllViews();
@@ -3116,7 +3293,7 @@ const FIREBASE_CONFIG = {
 
       tr.innerHTML = `
         <td>${s.date} <span style="font-size:0.75rem; color:var(--text-muted);">${s.time || ''}</span></td>
-        <td><strong>${s.desc}</strong>${s.notes ? `<br><span style="font-size:0.72rem; color:var(--text-muted);">${s.notes}</span>` : ''}</td>
+        <td><strong>${s.desc}</strong>${s.notes ? `<br><span style="font-size:0.72rem; color:var(--text-muted);">${s.notes}</span>` : ''}${s.receivablePersonName ? `<br><span style="font-size:0.72rem; color:var(--accent-purple); font-weight:700;"><i class="fa-solid fa-user"></i> ${s.receivablePersonName}</span>` : ''}</td>
         <td>₹${parseFloat(s.deptFee || 0).toFixed(2)}</td>
         <td>₹${parseFloat(s.serviceCharge || 0).toFixed(2)}</td>
         <td>₹${parseFloat(s.discount || 0).toFixed(2)}</td>
@@ -3162,7 +3339,9 @@ const FIREBASE_CONFIG = {
     document.getElementById('editSplitCash').value = s.isSplit ? (s.splitCash || 0) : 0;
     document.getElementById('editSplitBank').value = s.isSplit ? (s.splitBank || 0) : 0;
     document.getElementById('editSplitReceivable').value = s.isSplit ? (s.splitReceivable || 0) : 0;
+    document.getElementById('editReceivablePersonName').value = s.receivablePersonName || '';
     toggleEditSplitUI();
+    updateEditReceivableNameVisibility();
 
     document.getElementById('editServiceModal').style.display = 'flex';
   }
@@ -3171,12 +3350,30 @@ const FIREBASE_CONFIG = {
     document.getElementById('editServiceModal').style.display = 'none';
   }
 
+  function updateEditReceivableNameVisibility() {
+    const isSplit = document.getElementById('editSplitPaymentToggle').checked;
+    let hasReceivable = false;
+
+    if (isSplit) {
+      const recVal = parseFloat(document.getElementById('editSplitReceivable').value || 0);
+      hasReceivable = recVal > 0;
+    } else {
+      const payMode = document.getElementById('editLoggedPayMode').value;
+      const total = parseFloat(document.getElementById('editLoggedFinalPay').value || 0);
+      hasReceivable = (payMode === 'Receivables/Credit' && total > 0);
+    }
+
+    const group = document.getElementById('editReceivablePersonNameGroup');
+    if (group) group.style.display = hasReceivable ? 'block' : 'none';
+  }
+
   function calculateEditFinalPrice() {
     const dept = parseFloat(document.getElementById('editLoggedDeptFee').value || 0);
     const srv = parseFloat(document.getElementById('editLoggedServiceCharge').value || 0);
     const disc = parseFloat(document.getElementById('editLoggedDiscount').value || 0);
     document.getElementById('editLoggedFinalPay').value = Math.max(0, (dept + srv) - disc);
     updateEditSplitTracker();
+    updateEditReceivableNameVisibility();
   }
 
   function toggleEditSplitUI() {
@@ -3184,9 +3381,11 @@ const FIREBASE_CONFIG = {
     document.getElementById('editSinglePaymentModeBox').style.display = isSplit ? 'none' : 'block';
     document.getElementById('editSplitFieldsBox').style.display = isSplit ? 'block' : 'none';
     updateEditSplitTracker();
+    updateEditReceivableNameVisibility();
   }
 
   function updateEditSplitTracker() {
+    updateEditReceivableNameVisibility();
     if (!document.getElementById('editSplitPaymentToggle').checked) return;
 
     const total = parseFloat(document.getElementById('editLoggedFinalPay').value || 0);
@@ -3241,6 +3440,18 @@ const FIREBASE_CONFIG = {
       s.splitCash = 0;
       s.splitBank = 0;
       s.splitReceivable = 0;
+    }
+
+    // Save receivable person name
+    const editRecAmt = s.isSplit ? parseFloat(s.splitReceivable || 0) : (s.payMode === 'Receivables/Credit' ? parseFloat(s.total || 0) : 0);
+    if (editRecAmt > 0) {
+      const editPersonName = document.getElementById('editReceivablePersonName').value.trim();
+      if (!editPersonName) {
+        return alert("Please enter the Receivable Person Name — it is required when a receivable amount is allocated.");
+      }
+      s.receivablePersonName = editPersonName;
+    } else {
+      s.receivablePersonName = '';
     }
 
     saveData();
@@ -4151,12 +4362,36 @@ const FIREBASE_CONFIG = {
     });
   }
 
+  /* Show/hide the Department Fee field in the Admin catalog form
+     based on the selected category: Standard = hidden, Custom = visible */
+  function updateAdminDeptFeeVisibility() {
+    const cat = document.getElementById('newServiceCategory').value;
+    const group = document.getElementById('adminDeptFeeGroup');
+    if (!group) return;
+    group.style.display = (cat === 'Custom Utility & Bill Services') ? 'block' : 'none';
+    if (cat !== 'Custom Utility & Bill Services') {
+      document.getElementById('newServiceDeptFee').value = 0;
+    }
+  }
+
+  /* Show/hide the Department Fee field in the Staff catalog form */
+  function updateStaffDeptFeeVisibility() {
+    const cat = document.getElementById('staffNewServiceCategory').value;
+    const group = document.getElementById('staffDeptFeeGroup');
+    if (!group) return;
+    group.style.display = (cat === 'Custom Utility & Bill Services') ? 'block' : 'none';
+    if (cat !== 'Custom Utility & Bill Services') {
+      document.getElementById('staffNewServiceDeptFee').value = 0;
+    }
+  }
+
   function saveMasterService(e) {
     e.preventDefault();
     const id = document.getElementById('editServiceId').value;
     const cat = document.getElementById('newServiceCategory').value;
     const name = document.getElementById('newServiceName').value.trim();
     const price = parseFloat(document.getElementById('newServicePrice').value || 0);
+    const deptFee = parseFloat(document.getElementById('newServiceDeptFee').value || 0);
 
     if (id) {
       const s = appData.masterServices.find(x => x.id === id);
@@ -4164,9 +4399,16 @@ const FIREBASE_CONFIG = {
         s.category = cat;
         s.name = name;
         s.price = price;
+        s.deptFee = (cat === 'Custom Utility & Bill Services') ? deptFee : 0;
       }
     } else {
-      appData.masterServices.push({ id: "srv_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8), category: cat, name: name, price: price, deptFee: 0 });
+      appData.masterServices.push({
+        id: "srv_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8),
+        category: cat,
+        name: name,
+        price: price,
+        deptFee: (cat === 'Custom Utility & Bill Services') ? deptFee : 0
+      });
     }
 
     saveData();
@@ -4174,6 +4416,8 @@ const FIREBASE_CONFIG = {
     document.getElementById('editServiceId').value = '';
     document.getElementById('newServiceName').value = '';
     document.getElementById('newServicePrice').value = '';
+    document.getElementById('newServiceDeptFee').value = 0;
+    updateAdminDeptFeeVisibility();
     populateServiceDropdown();
     renderMasterCatalogTable();
   }
@@ -4186,6 +4430,8 @@ const FIREBASE_CONFIG = {
     document.getElementById('newServiceCategory').value = s.category;
     document.getElementById('newServiceName').value = s.name;
     document.getElementById('newServicePrice').value = s.price;
+    document.getElementById('newServiceDeptFee').value = s.deptFee || 0;
+    updateAdminDeptFeeVisibility();
   }
 
   function deleteMasterService(id) {
