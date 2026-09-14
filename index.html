@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATMOS Digital Solutions - Operational Hub</title>
+  <title>ATMOS Digital Solutions - Fast. Secure. Seamless.</title>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js for Analytics -->
@@ -86,6 +86,9 @@
       30% { right: 150%; }
       100% { right: 150%; }
     }
+    .brand-logo-box.has-logo { background: transparent; box-shadow: none; }
+    .brand-logo-box.has-logo::after { display: none; }
+    .brand-logo-box.has-logo img { height: 40px; max-width: 150px; object-fit: contain; display: block; }
 
     /* Navigation Header */
     nav { 
@@ -384,7 +387,7 @@
 <!-- SIDE DRAWER NAVIGATION -->
 <div id="sideDrawer" class="side-drawer">
   <div class="drawer-header">
-    <div class="brand-logo-box">ATMOS<span>.</span></div>
+    <div id="drawerBrandLogoBox" class="brand-logo-box">ATMOS<span>.</span></div>
     <button onclick="closeDrawer()" style="background:transparent; color:white; font-size:1.2rem; padding:4px;"><i class="fa-solid fa-xmark"></i></button>
   </div>
   <a class="drawer-menu-item active" id="drawer-dashboardTab" onclick="navigateFromDrawer('dashboardTab')"><i class="fa-solid fa-chart-line"></i> Dashboard Summary</a>
@@ -401,11 +404,11 @@
 <div id="loginModal" class="modal">
   <div class="modal-card">
     <div style="text-align: center; margin-bottom: 20px;">
-      <div class="brand-logo-box" style="font-size: 1.4rem; padding: 8px 16px; margin-bottom: 8px;">
+      <div id="loginBrandLogoBox" class="brand-logo-box" style="font-size: 1.4rem; padding: 8px 16px; margin-bottom: 8px;">
         ATMOS<span>.</span>
       </div>
       <h2 style="font-size: 1.1rem; font-weight: 900; color: var(--atmos-navy); text-transform: uppercase;">Digital Solutions</h2>
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Operational Hub Login</p>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">Fast. Secure. Seamless.</p>
     </div>
 
     <div style="display: flex; gap: 8px; margin-bottom: 16px; background: var(--bg); padding: 4px; border-radius: var(--radius-md);">
@@ -463,10 +466,10 @@
     <button class="menu-toggle-btn" onclick="openDrawer()" title="Open Menu">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <div class="brand-logo-box">ATMOS<span>.</span></div>
+    <div id="navBrandLogoBox" class="brand-logo-box">ATMOS<span>.</span></div>
     <div>
       <div class="brand-title">Digital Solutions</div>
-      <div class="brand-subtitle">Operational Hub</div>
+      <div class="brand-subtitle">Fast. Secure. Seamless.</div>
     </div>
   </div>
   <div class="nav-actions">
@@ -500,7 +503,7 @@
     <div class="grid-metrics">
       <div class="metric-card card-green card-cash-gradient">
         <div class="metric-header">
-          <span class="metric-title">Cash Drawer Balance</span>
+          <span class="metric-title" style="color: var(--accent-green);">Cash Drawer Balance</span>
           <div class="metric-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
         </div>
         <div class="metric-value" id="dashMetricCash">₹3,000.00</div>
@@ -509,7 +512,7 @@
 
       <div class="metric-card card-blue card-bank-gradient">
         <div class="metric-header">
-          <span class="metric-title">Bank / UPI Balance</span>
+          <span class="metric-title" style="color: var(--primary);">Bank / UPI Balance</span>
           <div class="metric-icon"><i class="fa-solid fa-building-columns"></i></div>
         </div>
         <div class="metric-value" id="dashMetricBank">₹0.00</div>
@@ -518,16 +521,37 @@
 
       <div class="metric-card card-purple">
         <div class="metric-header">
-          <span class="metric-title">Receivables / Credit</span>
+          <span class="metric-title" style="color: var(--accent-purple);">Receivables / Credit</span>
           <div class="metric-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
         </div>
         <div class="metric-value" id="dashMetricCredit">₹0.00</div>
         <div class="metric-sub" style="color: var(--accent-purple);"><i class="fa-solid fa-clock"></i> Outstanding Customer Credit</div>
       </div>
 
+      <div class="metric-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #fff7ed 100%); border: 1px solid #d1fae5;">
+        <div class="metric-header">
+          <span class="metric-title">Admin Fund Transfer Summary</span>
+          <div class="metric-icon" style="background: #d1fae5; color: #10B981;"><i class="fa-solid fa-right-left"></i></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted);">Transferred to Admin</span>
+            <span id="dashAdminTransferred" style="font-size:1rem; font-weight:800; color:#10B981;">₹0.00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted);">Received from Admin</span>
+            <span id="dashAdminReceived" style="font-size:1rem; font-weight:800; color:#F59E0B;">₹0.00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border); padding-top:6px;">
+            <span style="font-size:0.72rem; font-weight:800; color:var(--atmos-navy);">Net Admin Fund Balance</span>
+            <span id="dashAdminNet" style="font-size:1.1rem; font-weight:900; color:var(--atmos-navy);">₹0.00</span>
+          </div>
+        </div>
+      </div>
+
       <div class="metric-card card-amber">
         <div class="metric-header">
-          <span class="metric-title">Overall Total Balance</span>
+          <span class="metric-title" style="color: var(--accent-amber);">Overall Total Balance</span>
           <div class="metric-icon"><i class="fa-solid fa-vault"></i></div>
         </div>
         <div class="metric-value" id="dashMetricTotalBal">₹3,000.00</div>
@@ -1051,7 +1075,7 @@
         <i class="fa-solid fa-lock"></i> Selected month is CLOSED. Editing and deleting transfers are restricted.
       </div>
 
-      <div style="overflow-x: auto;">
+      <div id="transferHistoryTableWrap" style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
@@ -1065,7 +1089,91 @@
           <tbody id="transferHistoryTable"></tbody>
         </table>
       </div>
+      <div id="transferHistoryShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
+        <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleTransferHistoryShowMore()">Show More Entries</button>
+      </div>
     </div>
+
+    <!-- ADMIN FUND TRANSFER SECTION -->
+    <div class="app-card" style="border-left: 5px solid #10B981; margin-bottom: 24px;">
+      <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
+        <i class="fa-solid fa-user-shield" style="color: #10B981; margin-right: 6px;"></i> Admin Fund Transfers
+      </h3>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+        Record fund movements between the Shop and Admin. Transfer to Admin reduces Bank/UPI balance (no profit impact). Received from Admin increases Bank/UPI balance and reduces cumulative profit.
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        <form onsubmit="recordAdminTransfer(event, 'TransferToAdmin')" style="background: #f0fdf4; padding: 16px; border-radius: var(--radius-md); border: 1px solid #d1fae5;">
+          <h4 style="font-size: 0.95rem; font-weight: 800; color: #10B981; margin-bottom: 12px;">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i> Transfer to Admin
+          </h4>
+          <div class="form-group">
+            <label>Transaction Date</label>
+            <input type="date" id="adminTransferDateInput" required>
+          </div>
+          <div class="form-group">
+            <label>Description (Optional)</label>
+            <input type="text" id="adminTransferDescInput" placeholder="e.g. Cash sent to Admin">
+          </div>
+          <div class="form-group">
+            <label>Amount (₹)</label>
+            <input type="number" id="adminTransferAmountInput" min="1" placeholder="e.g. 10000" required style="font-weight:800; color:#10B981;">
+          </div>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">Transfer to Admin</button>
+        </form>
+        <form onsubmit="recordAdminTransfer(event, 'ReceivedFromAdmin')" style="background: #fff7ed; padding: 16px; border-radius: var(--radius-md); border: 1px solid #fed7aa;">
+          <h4 style="font-size: 0.95rem; font-weight: 800; color: #F59E0B; margin-bottom: 12px;">
+            <i class="fa-solid fa-arrow-down-to-bracket"></i> Received from Admin
+          </h4>
+          <div class="form-group">
+            <label>Transaction Date</label>
+            <input type="date" id="adminReceivedDateInput" required>
+          </div>
+          <div class="form-group">
+            <label>Description (Optional)</label>
+            <input type="text" id="adminReceivedDescInput" placeholder="e.g. Funds received from Admin">
+          </div>
+          <div class="form-group">
+            <label>Amount (₹)</label>
+            <input type="number" id="adminReceivedAmountInput" min="1" placeholder="e.g. 5000" required style="font-weight:800; color:#F59E0B;">
+          </div>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">Received from Admin</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADMIN FUND TRANSFER LEDGER -->
+    <div class="app-card" style="border-left: 3px solid #10B981; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+        <h3 style="font-size: 1.05rem; font-weight: 800;">Admin Fund Transfer Ledger (Editable & Deletable)</h3>
+        <div class="month-picker-box">
+          <label>Filter Month:</label>
+          <input type="month" id="adminTransferLogMonthPicker" onchange="renderAdminTransferTab()">
+        </div>
+      </div>
+      <div id="adminTransferClosedMonthBanner" style="display: none;" class="closed-month-banner">
+        <i class="fa-solid fa-lock"></i> Selected month is CLOSED. Editing and deleting are restricted.
+      </div>
+      <div id="adminTransferHistoryTableWrap" style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Transfer Type</th>
+              <th>Description</th>
+              <th>Amount (₹)</th>
+              <th>Recorded By</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="adminTransferHistoryTable"></tbody>
+        </table>
+      </div>
+      <div id="adminTransferHistoryShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
+        <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleAdminTransferHistoryShowMore()">Show More Entries</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- TAB 5: CSC INVOICE GENERATOR -->
@@ -1149,6 +1257,9 @@
 
       <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px;">
         <div>
+          <div id="invoiceLogoDisplay" style="display: none; margin-bottom: 6px; text-align: left;">
+            <img id="invoiceLogoImg" src="" alt="Shop Logo" style="max-height: 70px; max-width: 180px; object-fit: contain;">
+          </div>
           <p style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Powered by ATMOS Digital Solutions</p>
         </div>
         <div style="text-align: right;">
@@ -1281,6 +1392,43 @@
         <div style="background: white; padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--accent-amber-bg);">
           <span style="font-size: 0.7rem; font-weight: 800; color: var(--accent-amber); text-transform: uppercase;">Overall Cumulative Profit</span>
           <div id="hrMgmtOverallProfit" style="font-size: 1.4rem; font-weight: 900; color: var(--atmos-navy); margin-top: 4px;">₹0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORICAL MONTHLY FINANCIAL DATA ENTRY (ADMIN ONLY) -->
+    <div class="app-card" style="border-left: 5px solid var(--accent-amber); margin-bottom: 24px;">
+      <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-amber); margin-right: 6px;"></i> Historical Monthly Financial Data Entry
+      </h3>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+        Enter historical monthly totals for previous months/years where detailed transaction data is not available. Historical Net Balance = Service Charge - Expense. This contributes to cumulative profit without creating fake transactions.
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+        <form onsubmit="saveHistoricalMonth(event)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label>Month & Year</label>
+              <input type="month" id="historicalMonthPicker" required>
+            </div>
+            <div class="form-group">
+              <label>Total Service Charge (₹)</label>
+              <input type="number" id="historicalServiceCharge" min="0" placeholder="e.g. 100000" required style="font-weight:800; color:var(--accent-green);">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Total Expense (₹)</label>
+            <input type="number" id="historicalExpense" min="0" placeholder="e.g. 70000" required style="font-weight:800; color:var(--accent-rose);">
+          </div>
+          <button type="submit" class="btn-primary" style="background: var(--accent-amber);">Save Historical Month Data</button>
+        </form>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr><th>Month</th><th>Service Charge</th><th>Expense</th><th>Net Balance</th><th>Cumulative Profit</th><th>Action</th></tr>
+            </thead>
+            <tbody id="historicalMonthsTableBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1553,6 +1701,29 @@
           <input type="text" id="firebaseDbUrlInput" placeholder="e.g. https://atmos-operational-hub-default-rtdb.asia-southeast1.firebasedatabase.app">
         </div>
         <button class="btn-primary" onclick="saveFirebaseSettings()" style="width: auto;"><i class="fa-solid fa-plug"></i> Connect & Sync Cloud Database</button>
+      </div>
+
+      <!-- SHOP LOGO MANAGEMENT (ADMIN ONLY) -->
+      <div class="app-card" style="border-left: 5px solid var(--atmos-red); margin-bottom: 24px;">
+        <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
+          <i class="fa-solid fa-image" style="color: var(--atmos-red); margin-right: 6px;"></i> Shop Logo Management
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
+          Upload a logo image from your gallery. The logo appears on CSC invoices and remains until replaced with another image.
+        </p>
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div id="shopLogoPreviewBox" style="width: 130px; height: 130px; border: 2px dashed var(--border); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--bg); overflow: hidden;">
+            <span id="shopLogoPlaceholder" style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700;">No Logo</span>
+            <img id="shopLogoPreviewImg" src="" alt="Logo" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <div>
+            <input type="file" id="shopLogoFileInput" accept="image/*" onchange="handleShopLogoUpload(event)" style="max-width: 260px;">
+            <div style="margin-top: 10px;">
+              <button class="btn-danger" onclick="removeShopLogo()">Remove Logo</button>
+            </div>
+            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px;">Recommended: PNG / JPG logo image.</p>
+          </div>
+        </div>
       </div>
 
       <!-- STAFF CREDENTIAL MANAGEMENT -->
@@ -1878,6 +2049,37 @@
   </div>
 </div>
 
+<!-- EDIT ADMIN TRANSFER MODAL -->
+<div id="editAdminTransferModal" class="modal" style="display: none;">
+  <div class="modal-card">
+    <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 16px;">Edit Admin Fund Transfer</h3>
+    <input type="hidden" id="editAdminTransferId">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="editAdminTransferDate" required>
+    </div>
+    <div class="form-group">
+      <label>Transfer Type</label>
+      <select id="editAdminTransferType">
+        <option value="TransferToAdmin">Transfer to Admin</option>
+        <option value="ReceivedFromAdmin">Received from Admin</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <input type="text" id="editAdminTransferDesc">
+    </div>
+    <div class="form-group">
+      <label>Amount (₹)</label>
+      <input type="number" id="editAdminTransferAmount" min="1" required>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button style="flex: 1; background: var(--bg); color: var(--text-muted);" onclick="closeEditAdminTransferModal()">Cancel</button>
+      <button style="flex: 1;" class="btn-primary" onclick="saveEditedAdminTransfer()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD/EDIT STAFF CREDENTIAL MODAL -->
 <div id="addStaffModal" class="modal" style="display: none;">
   <div class="modal-card">
@@ -2070,7 +2272,10 @@
     monthlySalaries: {},
     staffDailyEditCount: {},
     staffMilestoneAchieved: {},
-    staffProfiles: {}
+    staffProfiles: {},
+    adminTransfers: [],
+    historicalMonths: {},
+    logoDataUrl: ''
   };
 
   let currentUser = null;
@@ -2097,6 +2302,7 @@ const FIREBASE_CONFIG = {
   window.addEventListener('DOMContentLoaded', () => {
     initDefaultDates();
     loadLocalData();
+    updateShopLogoDisplays();
     if (dedupeEntryIds()) saveData(); /* repair duplicate ids saved by the old version */
     setupFirebaseSync();
     renderLoginDropdown();
@@ -2128,6 +2334,10 @@ const FIREBASE_CONFIG = {
     document.getElementById('hrProfileMonthPicker').value = monthStr;
     document.getElementById('attendanceMonthPicker').value = monthStr;
     document.getElementById('hrMonthlyMgmtPicker').value = monthStr;
+    document.getElementById('adminTransferDateInput').value = todayStr;
+    document.getElementById('adminReceivedDateInput').value = todayStr;
+    document.getElementById('adminTransferLogMonthPicker').value = monthStr;
+    document.getElementById('historicalMonthPicker').value = monthStr;
   }
 
   /* LOCAL & CLOUD STORAGE HANDLING */
@@ -2141,7 +2351,7 @@ const FIREBASE_CONFIG = {
         console.error("Local data parse error", e);
       }
     }
-    const savedUrl = localStorage.getItem('ATMOS_FIREBASE_URL');
+    const savedUrl = localStorage.getItem('ATMOS_FIREBASE_URL') || FIREBASE_CONFIG.databaseURL;
     if (savedUrl) {
       document.getElementById('firebaseDbUrlInput').value = savedUrl;
     }
@@ -2205,6 +2415,11 @@ const FIREBASE_CONFIG = {
       closedMonths: appData.closedMonths,
       staffBalanceEdits: appData.staffDailyEditCount,
       staffProfiles: appData.staffProfiles || {},
+      appLogo: appData.logoDataUrl || '',
+      adminTransfers: (appData.adminTransfers || []).slice().reverse().map(function(at) {
+        return { id: at.id, date: at.date, time: at.time || "", timestamp: at.timestamp || Date.now(), type: at.type, desc: at.desc || "", amount: at.amount, user: at.staff || "" };
+      }),
+      historicalMonths: appData.historicalMonths || {},
       adminMessages: [],
       lastUpdated: Date.now()
     };
@@ -2427,6 +2642,29 @@ const FIREBASE_CONFIG = {
       out.staffProfiles = { ...legacy.staffProfiles };
     }
 
+    if (legacy.appLogo) {
+      out.logoDataUrl = legacy.appLogo;
+    }
+
+    if (Array.isArray(legacy.adminTransfers)) {
+      out.adminTransfers = legacy.adminTransfers.map(function(e, i) {
+        return {
+          id: (e.id !== undefined && e.id !== null && String(e.id).length > 0) ? e.id : 'ADMTRF_' + (Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 8)),
+          date: e.date,
+          time: e.time || istTimeFromTimestamp(e.timestamp),
+          timestamp: e.timestamp,
+          type: e.type === 'ReceivedFromAdmin' ? 'ReceivedFromAdmin' : 'TransferToAdmin',
+          desc: e.desc || e.description || "",
+          amount: parseFloat(e.amount) || 0,
+          staff: e.user || e.staff || ""
+        };
+      }).reverse();
+    }
+
+    if (legacy.historicalMonths && typeof legacy.historicalMonths === 'object') {
+      out.historicalMonths = { ...legacy.historicalMonths };
+    }
+
     return out;
   }
 
@@ -2511,6 +2749,67 @@ const FIREBASE_CONFIG = {
     localStorage.setItem('ATMOS_FIREBASE_URL', url);
     setupFirebaseSync();
     alert("Firebase Database configuration updated!");
+  }
+
+  /* SHOP LOGO MANAGEMENT (Admin Only) */
+  function updateShopLogoDisplays() {
+    var logoUrl = appData.logoDataUrl || '';
+    var previewImg = document.getElementById('shopLogoPreviewImg');
+    var placeholder = document.getElementById('shopLogoPlaceholder');
+    if (previewImg) {
+      if (logoUrl) {
+        previewImg.src = logoUrl;
+        previewImg.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+      } else {
+        previewImg.style.display = 'none';
+        previewImg.src = '';
+        if (placeholder) placeholder.style.display = 'block';
+      }
+    }
+    var invLogoBox = document.getElementById('invoiceLogoDisplay');
+    var invLogoImg = document.getElementById('invoiceLogoImg');
+    if (invLogoBox && invLogoImg) {
+      if (logoUrl) {
+        invLogoImg.src = logoUrl;
+        invLogoBox.style.display = 'block';
+      } else {
+        invLogoBox.style.display = 'none';
+        invLogoImg.src = '';
+      }
+    }
+    ['loginBrandLogoBox', 'drawerBrandLogoBox', 'navBrandLogoBox'].forEach(function(boxId) {
+      var box = document.getElementById(boxId);
+      if (!box) return;
+      if (logoUrl) {
+        box.classList.add('has-logo');
+        box.innerHTML = '<img src="' + logoUrl + '" alt="ATMOS Logo">';
+      } else {
+        box.classList.remove('has-logo');
+        box.innerHTML = 'ATMOS<span>.</span>';
+      }
+    });
+  }
+
+  function handleShopLogoUpload(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      appData.logoDataUrl = evt.target.result;
+      saveData();
+      updateShopLogoDisplays();
+      alert('Shop logo updated successfully!');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeShopLogo() {
+    if (!appData.logoDataUrl) return alert('No logo is currently set.');
+    if (!confirm('Remove the current shop logo?')) return;
+    appData.logoDataUrl = '';
+    saveData();
+    updateShopLogoDisplays();
   }
 
   /* LOGIN & USER SWITCHING */
@@ -2746,6 +3045,18 @@ const FIREBASE_CONFIG = {
       }
     });
 
+    // Process Admin Fund Transfers (affect Bank/UPI balance only)
+    (appData.adminTransfers || []).forEach(function(at) {
+      var atMonth = (at.date || '').substring(0, 7);
+      if (atMonth !== filterMonth) return;
+      var amt = parseFloat(at.amount || 0);
+      if (at.type === 'TransferToAdmin') {
+        bank -= amt;
+      } else if (at.type === 'ReceivedFromAdmin') {
+        bank += amt;
+      }
+    });
+
     return { cash, bank, credit, total: cash + bank + credit };
   }
 
@@ -2759,9 +3070,31 @@ const FIREBASE_CONFIG = {
     document.getElementById('dashMetricCredit').innerText = `₹${bal.credit.toFixed(2)}`;
     document.getElementById('dashMetricTotalBal').innerText = `₹${bal.total.toFixed(2)}`;
 
+    renderAdminFundSummary();
+
     renderDashboardOverviewForDate();
     renderStaffControlsArea();
     renderStaffMasterCatalog();
+  }
+
+  /* ADMIN FUND TRANSFER SUMMARY (Dashboard) */
+  function renderAdminFundSummary() {
+    var transferred = 0, received = 0;
+    (appData.adminTransfers || []).forEach(function(at) {
+      var amt = parseFloat(at.amount || 0);
+      if (at.type === 'TransferToAdmin') transferred += amt;
+      else if (at.type === 'ReceivedFromAdmin') received += amt;
+    });
+    var net = transferred - received;
+    var tEl = document.getElementById('dashAdminTransferred');
+    var rEl = document.getElementById('dashAdminReceived');
+    var nEl = document.getElementById('dashAdminNet');
+    if (tEl) tEl.innerText = '₹' + transferred.toFixed(2);
+    if (rEl) rEl.innerText = '₹' + received.toFixed(2);
+    if (nEl) {
+      nEl.innerText = '₹' + net.toFixed(2);
+      nEl.style.color = net >= 0 ? '#10B981' : '#F59E0B';
+    }
   }
 
   /* STAFF MASTER SERVICE CATALOGUE (shared with Admin - same appData.masterServices) */
@@ -3615,7 +3948,21 @@ const FIREBASE_CONFIG = {
     refreshAllViews();
   }
 
+  var transferHistoryShowAll = false;
+  var adminTransferHistoryShowAll = false;
+
+  function toggleTransferHistoryShowMore() {
+    transferHistoryShowAll = !transferHistoryShowAll;
+    renderTransferTab();
+  }
+
+  function toggleAdminTransferHistoryShowMore() {
+    adminTransferHistoryShowAll = !adminTransferHistoryShowAll;
+    renderAdminTransferTab();
+  }
+
   function renderTransferTab() {
+    renderAdminTransferTab();
     const month = document.getElementById('transferLogMonthPicker').value || getISTMonthStr();
     const isClosed = !!appData.closedMonths[month];
     document.getElementById('transferClosedMonthBanner').style.display = isClosed ? 'flex' : 'none';
@@ -3624,7 +3971,8 @@ const FIREBASE_CONFIG = {
     const tbody = document.getElementById('transferHistoryTable');
     tbody.innerHTML = '';
 
-    logs.forEach(t => {
+    const visibleLogs = transferHistoryShowAll ? logs : logs.slice(0, 7);
+    visibleLogs.forEach(t => {
       const tr = document.createElement('tr');
       const dirText = t.direction === 'CashToBank' ? 'Cash Drawer ➔ Bank / UPI' : 'Bank / UPI ➔ Cash Drawer';
 
@@ -3642,6 +3990,18 @@ const FIREBASE_CONFIG = {
       `;
       tbody.appendChild(tr);
     });
+
+    var moreBox = document.getElementById('transferHistoryShowMoreBox');
+    if (moreBox) {
+      moreBox.style.display = logs.length > 7 ? 'block' : 'none';
+      var moreBtn = moreBox.querySelector('button');
+      if (moreBtn) moreBtn.innerText = transferHistoryShowAll ? 'Show Less' : 'Show More Entries (' + logs.length + ' total)';
+    }
+    var histWrap = document.getElementById('transferHistoryTableWrap');
+    if (histWrap) {
+      histWrap.style.maxHeight = transferHistoryShowAll ? '420px' : 'none';
+      histWrap.style.overflowY = transferHistoryShowAll ? 'auto' : 'visible';
+    }
   }
 
   function deleteTransferRecord(id) {
@@ -3678,6 +4038,122 @@ const FIREBASE_CONFIG = {
 
     saveData();
     closeEditTransferModal();
+    refreshAllViews();
+  }
+
+  /* ---------------------------------------------------
+     4b. ADMIN FUND TRANSFERS (Transfer to Admin / Received from Admin)
+     - Transfer to Admin: reduces Bank/UPI balance, does NOT reduce profit
+     - Received from Admin: increases Bank/UPI balance, reduces cumulative profit
+  --------------------------------------------------- */
+  function recordAdminTransfer(e, type) {
+    e.preventDefault();
+    if (!currentUser) return alert('Please sign in first.');
+    var isReceived = type === 'ReceivedFromAdmin';
+    var dateInputId = isReceived ? 'adminReceivedDateInput' : 'adminTransferDateInput';
+    var descInputId = isReceived ? 'adminReceivedDescInput' : 'adminTransferDescInput';
+    var amtInputId = isReceived ? 'adminReceivedAmountInput' : 'adminTransferAmountInput';
+    var date = document.getElementById(dateInputId).value;
+    var monthStr = date.substring(0, 7);
+    if (appData.closedMonths[monthStr]) {
+      return alert('This month is CLOSED. Admin fund transfers cannot be recorded.');
+    }
+    var desc = document.getElementById(descInputId).value.trim();
+    var amount = parseFloat(document.getElementById(amtInputId).value || 0);
+    if (!amount || amount <= 0) return alert('Please enter a valid amount.');
+    if (!appData.adminTransfers) appData.adminTransfers = [];
+    var newRecord = {
+      id: 'ADMTRF_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+      date: date,
+      time: getISTTimeStr(),
+      timestamp: Date.now(),
+      type: type,
+      desc: desc || (type === 'TransferToAdmin' ? 'Transfer to Admin' : 'Received from Admin'),
+      amount: amount,
+      staff: currentUser.name
+    };
+    appData.adminTransfers.unshift(newRecord);
+    saveData();
+    alert(type === 'TransferToAdmin' ? 'Transfer to Admin recorded! Bank/UPI balance reduced.' : 'Received from Admin recorded! Bank/UPI balance increased.');
+    document.getElementById(amtInputId).value = '';
+    document.getElementById(descInputId).value = '';
+    refreshAllViews();
+  }
+
+  function renderAdminTransferTab() {
+    var month = document.getElementById('adminTransferLogMonthPicker').value || getISTMonthStr();
+    var isClosed = !!appData.closedMonths[month];
+    var banner = document.getElementById('adminTransferClosedMonthBanner');
+    if (banner) banner.style.display = isClosed ? 'flex' : 'none';
+    var logs = (appData.adminTransfers || []).filter(function(t) { return (t.date || '').substring(0, 7) === month; }).sort(function(a, b) { return entryDateTimeValue(b) - entryDateTimeValue(a); });
+    var tbody = document.getElementById('adminTransferHistoryTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    var moreBox = document.getElementById('adminTransferHistoryShowMoreBox');
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No admin fund transfers recorded for this month.</td></tr>';
+      if (moreBox) moreBox.style.display = 'none';
+      return;
+    }
+    var visibleLogs = adminTransferHistoryShowAll ? logs : logs.slice(0, 7);
+    visibleLogs.forEach(function(t) {
+      var isReceived = t.type === 'ReceivedFromAdmin';
+      var typeLabel = isReceived ? 'Received from Admin' : 'Transfer to Admin';
+      var color = isReceived ? '#F59E0B' : '#10B981';
+      var tr = document.createElement('tr');
+      var actions = isClosed ? '<span style="color:var(--text-muted); font-size:0.75rem;">Locked</span>' : '<button onclick="openEditAdminTransferModal(&#39;' + t.id + '&#39;)" style="background:none; color:var(--primary); padding:2px 6px;"><i class="fa-solid fa-pen"></i></button> <button onclick="deleteAdminTransferRecord(&#39;' + t.id + '&#39;)" style="background:none; color:var(--accent-rose); padding:2px 6px;"><i class="fa-solid fa-trash"></i></button>';
+      tr.innerHTML = '<td>' + t.date + ' <span style="font-size:0.75rem; color:var(--text-muted);">' + (t.time || '') + '</span></td>' +
+        '<td><strong style="color:' + color + ';">' + typeLabel + '</strong></td>' +
+        '<td>' + (t.desc || '-') + '</td>' +
+        '<td style="font-weight:800; color:' + color + ';">₹' + parseFloat(t.amount || 0).toFixed(2) + '</td>' +
+        '<td>' + t.staff + '</td>' +
+        '<td>' + actions + '</td>';
+      tbody.appendChild(tr);
+    });
+    if (moreBox) {
+      moreBox.style.display = logs.length > 7 ? 'block' : 'none';
+      var moreBtn = moreBox.querySelector('button');
+      if (moreBtn) moreBtn.innerText = adminTransferHistoryShowAll ? 'Show Less' : 'Show More Entries (' + logs.length + ' total)';
+    }
+    var adminWrap = document.getElementById('adminTransferHistoryTableWrap');
+    if (adminWrap) {
+      adminWrap.style.maxHeight = adminTransferHistoryShowAll ? '420px' : 'none';
+      adminWrap.style.overflowY = adminTransferHistoryShowAll ? 'auto' : 'visible';
+    }
+  }
+
+  function deleteAdminTransferRecord(id) {
+    if (!confirm('Are you sure you want to delete this admin fund transfer?')) return;
+    appData.adminTransfers = (appData.adminTransfers || []).filter(function(t) { return t.id !== id; });
+    saveData();
+    refreshAllViews();
+  }
+
+  function openEditAdminTransferModal(id) {
+    var t = (appData.adminTransfers || []).find(function(x) { return x.id === id; });
+    if (!t) return;
+    document.getElementById('editAdminTransferId').value = t.id;
+    document.getElementById('editAdminTransferDate').value = t.date;
+    document.getElementById('editAdminTransferType').value = t.type;
+    document.getElementById('editAdminTransferDesc').value = t.desc || '';
+    document.getElementById('editAdminTransferAmount').value = t.amount;
+    document.getElementById('editAdminTransferModal').style.display = 'flex';
+  }
+
+  function closeEditAdminTransferModal() {
+    document.getElementById('editAdminTransferModal').style.display = 'none';
+  }
+
+  function saveEditedAdminTransfer() {
+    var id = document.getElementById('editAdminTransferId').value;
+    var t = (appData.adminTransfers || []).find(function(x) { return x.id === id; });
+    if (!t) return;
+    t.date = document.getElementById('editAdminTransferDate').value;
+    t.type = document.getElementById('editAdminTransferType').value;
+    t.desc = document.getElementById('editAdminTransferDesc').value.trim();
+    t.amount = parseFloat(document.getElementById('editAdminTransferAmount').value || 0);
+    saveData();
+    closeEditAdminTransferModal();
     refreshAllViews();
   }
 
@@ -3945,6 +4421,7 @@ const FIREBASE_CONFIG = {
   }
 
   function renderAdminTab() {
+    updateShopLogoDisplays();
     checkMonthClosingStatus();
     renderStaffSalaryTable();
     loadAdminOpeningBalancesForPicker();
@@ -4027,21 +4504,115 @@ const FIREBASE_CONFIG = {
       expenses += parseFloat(e.amount || 0);
     });
 
-    const netBal = srvCharges - expenses;
+    let receivedFromAdminThisMonth = 0;
+    (appData.adminTransfers || []).filter(function(t) { return (t.date || '').substring(0, 7) === month && t.type === 'ReceivedFromAdmin'; }).forEach(function(t) {
+      receivedFromAdminThisMonth += parseFloat(t.amount || 0);
+    });
 
-    // Cumulative overall profit across ALL months (total income - total expenses)
+    // Monthly Net Balance = Service Charges - Expenses - Received from Admin
+    const netBal = srvCharges - expenses - receivedFromAdminThisMonth;
+
+    // Cumulative overall profit across ALL months
+    // Monthly Net = Service Charges - Expenses - Received from Admin
+    // Transfer to Admin does NOT reduce profit
     let overallProfit = 0;
-    appData.serviceLog.forEach(s => {
-      overallProfit += parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0);
+    const detailedMonths = new Set();
+    appData.serviceLog.forEach(function(s) { detailedMonths.add(s.date.substring(0, 7)); });
+    appData.expenseLog.forEach(function(e) { detailedMonths.add(e.date.substring(0, 7)); });
+
+    const monthServiceCharges = {};
+    const monthExpenses = {};
+    const monthReceivedAdmin = {};
+    appData.serviceLog.forEach(function(s) {
+      var m = s.date.substring(0, 7);
+      monthServiceCharges[m] = (monthServiceCharges[m] || 0) + parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0);
     });
-    appData.expenseLog.forEach(e => {
-      overallProfit -= parseFloat(e.amount || 0);
+    appData.expenseLog.forEach(function(e) {
+      var m = e.date.substring(0, 7);
+      monthExpenses[m] = (monthExpenses[m] || 0) + parseFloat(e.amount || 0);
     });
+    (appData.adminTransfers || []).forEach(function(t) {
+      var m = (t.date || '').substring(0, 7);
+      if (t.type === 'ReceivedFromAdmin') {
+        monthReceivedAdmin[m] = (monthReceivedAdmin[m] || 0) + parseFloat(t.amount || 0);
+      }
+    });
+
+    detailedMonths.forEach(function(m) {
+      overallProfit += (monthServiceCharges[m] || 0) - (monthExpenses[m] || 0) - (monthReceivedAdmin[m] || 0);
+    });
+
+    if (appData.historicalMonths) {
+      Object.keys(appData.historicalMonths).forEach(function(m) {
+        if (detailedMonths.has(m)) return;
+        var h = appData.historicalMonths[m];
+        if (h) overallProfit += parseFloat(h.serviceCharge || 0) - parseFloat(h.expense || 0);
+      });
+    }
+
+    renderHistoricalMonthsTable();
 
     document.getElementById('hrMgmtServiceCharges').innerText = `₹${srvCharges.toFixed(2)}`;
     document.getElementById('hrMgmtExpenses').innerText = `₹${expenses.toFixed(2)}`;
     document.getElementById('hrMgmtNetBalance').innerText = `₹${netBal.toFixed(2)}`;
     document.getElementById('hrMgmtOverallProfit').innerText = `₹${overallProfit.toFixed(2)}`;
+  }
+
+  /* HISTORICAL MONTHLY FINANCIAL DATA ENTRY (Admin Only) */
+  function saveHistoricalMonth(e) {
+    if (e) e.preventDefault();
+    var month = document.getElementById('historicalMonthPicker').value;
+    if (!month) return alert('Please select a month and year.');
+    var serviceCharge = parseFloat(document.getElementById('historicalServiceCharge').value || 0);
+    var expense = parseFloat(document.getElementById('historicalExpense').value || 0);
+    if (!appData.historicalMonths) appData.historicalMonths = {};
+    appData.historicalMonths[month] = { serviceCharge: serviceCharge, expense: expense };
+    saveData();
+    alert('Historical monthly data saved for ' + month + '!');
+    document.getElementById('historicalServiceCharge').value = '';
+    document.getElementById('historicalExpense').value = '';
+    renderHistoricalMonthsTable();
+    renderHrMonthlyManagement();
+  }
+
+  function renderHistoricalMonthsTable() {
+    var tbody = document.getElementById('historicalMonthsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!appData.historicalMonths || Object.keys(appData.historicalMonths).length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No historical monthly data entered yet.</td></tr>';
+      return;
+    }
+    var cumulative = 0;
+    var cumulativeByMonth = {};
+    Object.keys(appData.historicalMonths).sort().forEach(function(m) {
+      var h = appData.historicalMonths[m];
+      cumulative += parseFloat(h.serviceCharge || 0) - parseFloat(h.expense || 0);
+      cumulativeByMonth[m] = cumulative;
+    });
+    Object.keys(appData.historicalMonths).sort().reverse().forEach(function(m) {
+      var h = appData.historicalMonths[m];
+      var net = parseFloat(h.serviceCharge || 0) - parseFloat(h.expense || 0);
+      var netColor = net >= 0 ? 'var(--accent-green)' : 'var(--accent-rose)';
+      var cum = cumulativeByMonth[m] || 0;
+      var cumColor = cum >= 0 ? 'var(--accent-green)' : 'var(--accent-rose)';
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td><strong>' + m + '</strong></td>' +
+        '<td style="color:var(--accent-green); font-weight:800;">₹' + parseFloat(h.serviceCharge || 0).toFixed(2) + '</td>' +
+        '<td style="color:var(--accent-rose); font-weight:800;">₹' + parseFloat(h.expense || 0).toFixed(2) + '</td>' +
+        '<td style="font-weight:900; color:' + netColor + ';">₹' + net.toFixed(2) + '</td>' +
+        '<td style="font-weight:900; color:' + cumColor + ';">₹' + cum.toFixed(2) + '</td>' +
+        '<td><button onclick="deleteHistoricalMonth(&#39;' + m + '&#39;)" style="background:none; color:var(--accent-rose); padding:2px 6px;"><i class="fa-solid fa-trash"></i></button></td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function deleteHistoricalMonth(m) {
+    if (!confirm('Delete historical data for ' + m + '?')) return;
+    delete appData.historicalMonths[m];
+    saveData();
+    renderHistoricalMonthsTable();
+    renderHrMonthlyManagement();
   }
 
   /* STAFF SALARIES & INCENTIVES */
@@ -4333,12 +4904,12 @@ const FIREBASE_CONFIG = {
     if (staffChartInst) staffChartInst.destroy();
     const ctx3 = document.getElementById('staffChart').getContext('2d');
     staffChartInst = new Chart(ctx3, {
-      type: 'doughnut',
+      type: 'bar',
       data: {
         labels: staffNames,
-        datasets: [{ data: staffVolumes, backgroundColor: ['#2563eb', '#059669', '#7c3aed', '#d97706'] }]
+        datasets: [{ label: 'Service Volume (₹)', data: staffVolumes, backgroundColor: ['#2563eb', '#059669', '#7c3aed', '#d97706'], borderRadius: 6 }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: true } } }
     });
   }
 
