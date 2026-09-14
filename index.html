@@ -1405,22 +1405,20 @@
         Enter historical monthly totals for previous months/years where detailed transaction data is not available. Historical Net Balance = Service Charge - Expense. This contributes to cumulative profit without creating fake transactions.
       </p>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-        <form onsubmit="saveHistoricalMonth(event)">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label>Month & Year</label>
-              <input type="month" id="historicalMonthPicker" required>
-            </div>
-            <div class="form-group">
-              <label>Total Service Charge (₹)</label>
-              <input type="number" id="historicalServiceCharge" min="0" placeholder="e.g. 100000" required style="font-weight:800; color:var(--accent-green);">
-            </div>
+        <form onsubmit="saveHistoricalMonth(event)" style="display: grid; grid-template-columns: 1fr; gap: 4px;">
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Month & Year</label>
+            <input type="month" id="historicalMonthPicker" required>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label>Total Service Charge (₹)</label>
+            <input type="number" id="historicalServiceCharge" min="0" placeholder="e.g. 100000" required style="font-weight:800; color:var(--accent-green);">
+          </div>
+          <div class="form-group" style="margin-bottom: 10px;">
             <label>Total Expense (₹)</label>
             <input type="number" id="historicalExpense" min="0" placeholder="e.g. 70000" required style="font-weight:800; color:var(--accent-rose);">
           </div>
-          <button type="submit" class="btn-primary" style="background: var(--accent-amber);">Save Historical Month Data</button>
+          <button type="submit" class="btn-primary" style="background: var(--accent-amber); margin-top: 6px;">Save Historical Month Data</button>
         </form>
         <div style="overflow-x: auto;">
           <table>
