@@ -694,13 +694,16 @@
         </div>
 
         <div>
-          <div style="overflow-x: auto;">
+          <div id="staffMasterServicesTableWrap" style="overflow-x: auto;">
             <table>
               <thead>
                 <tr><th>Category</th><th>Service Name</th><th>Price</th></tr>
               </thead>
               <tbody id="staffMasterServicesTable"></tbody>
             </table>
+          </div>
+          <div id="staffMasterServicesShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
+            <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleStaffMasterCatalogShowMore()">View More Entries</button>
           </div>
         </div>
       </div>
@@ -876,7 +879,7 @@
         <i class="fa-solid fa-lock"></i> Selected month is CLOSED. Normal editing and deleting are restricted.
       </div>
 
-      <div style="overflow-x: auto;">
+      <div id="serviceHistoryTableWrap" style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
@@ -893,6 +896,9 @@
           </thead>
           <tbody id="serviceHistoryTable"></tbody>
         </table>
+      </div>
+      <div id="serviceHistoryShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
+        <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleServiceHistoryShowMore()">View More Entries</button>
       </div>
     </div>
   </div>
@@ -1008,7 +1014,7 @@
         <i class="fa-solid fa-lock"></i> Selected month is CLOSED. Editing and deleting are restricted.
       </div>
 
-      <div style="overflow-x: auto;">
+      <div id="expenseHistoryTableWrap" style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
@@ -1023,6 +1029,9 @@
           </thead>
           <tbody id="expenseHistoryTable"></tbody>
         </table>
+      </div>
+      <div id="expenseHistoryShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
+        <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleExpenseHistoryShowMore()">View More Entries</button>
       </div>
     </div>
   </div>
@@ -1405,28 +1414,31 @@
         Enter historical monthly totals for previous months/years where detailed transaction data is not available. Historical Net Balance = Service Charge - Expense. This contributes to cumulative profit without creating fake transactions.
       </p>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-        <form onsubmit="saveHistoricalMonth(event)" style="display: grid; grid-template-columns: 1fr; gap: 4px;">
-          <div class="form-group" style="margin-bottom: 10px;">
+        <form onsubmit="saveHistoricalMonth(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end;">
+          <div class="form-group" style="margin-bottom: 0;">
             <label>Month & Year</label>
             <input type="month" id="historicalMonthPicker" required>
           </div>
-          <div class="form-group" style="margin-bottom: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
             <label>Total Service Charge (₹)</label>
             <input type="number" id="historicalServiceCharge" min="0" placeholder="e.g. 100000" required style="font-weight:800; color:var(--accent-green);">
           </div>
-          <div class="form-group" style="margin-bottom: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
             <label>Total Expense (₹)</label>
             <input type="number" id="historicalExpense" min="0" placeholder="e.g. 70000" required style="font-weight:800; color:var(--accent-rose);">
           </div>
-          <button type="submit" class="btn-primary" style="background: var(--accent-amber); margin-top: 6px;">Save Historical Month Data</button>
+          <button type="submit" class="btn-primary" style="background: var(--accent-amber); grid-column: 1 / -1;">Save Historical Month Data</button>
         </form>
-        <div style="overflow-x: auto;">
+        <div id="historicalMonthsTableWrap" style="overflow-x: auto;">
           <table>
             <thead>
               <tr><th>Month</th><th>Service Charge</th><th>Expense</th><th>Net Balance</th><th>Cumulative Profit</th><th>Action</th></tr>
             </thead>
             <tbody id="historicalMonthsTableBody"></tbody>
           </table>
+        </div>
+        <div id="historicalMonthsShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
+          <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleHistoricalMonthsShowMore()">View More Entries</button>
         </div>
       </div>
     </div>
@@ -1675,13 +1687,16 @@
         <!-- MASTER CATALOG TABLE -->
         <div class="app-card">
           <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 16px;">Master Service Catalog</h3>
-          <div style="overflow-x: auto;">
+          <div id="masterServicesTableWrap" style="overflow-x: auto;">
             <table>
               <thead>
                 <tr><th>Category</th><th>Service Name</th><th>Price</th><th>Actions</th></tr>
               </thead>
               <tbody id="masterServicesTable"></tbody>
             </table>
+          </div>
+          <div id="masterServicesShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
+            <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleMasterCatalogShowMore()">View More Entries</button>
           </div>
         </div>
 
@@ -3106,7 +3121,9 @@ const FIREBASE_CONFIG = {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    appData.masterServices.forEach(s => {
+    var allServices = appData.masterServices.slice().reverse();
+    var visibleServices = staffMasterCatalogShowAll ? allServices : allServices.slice(0, 7);
+    visibleServices.forEach(s => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><span class="badge badge-std-cat">${s.category}</span></td>
@@ -3115,6 +3132,18 @@ const FIREBASE_CONFIG = {
       `;
       tbody.appendChild(tr);
     });
+
+    var moreBox = document.getElementById('staffMasterServicesShowMoreBox');
+    if (moreBox) {
+      moreBox.style.display = allServices.length > 7 ? 'block' : 'none';
+      var moreBtn = moreBox.querySelector('button');
+      if (moreBtn) moreBtn.innerText = staffMasterCatalogShowAll ? 'View Less' : 'View More Entries (' + allServices.length + ' total)';
+    }
+    var stfWrap = document.getElementById('staffMasterServicesTableWrap');
+    if (stfWrap) {
+      stfWrap.style.maxHeight = staffMasterCatalogShowAll ? '420px' : 'none';
+      stfWrap.style.overflowY = staffMasterCatalogShowAll ? 'auto' : 'visible';
+    }
   }
 
   function saveStaffMasterService(e) {
@@ -3602,14 +3631,16 @@ const FIREBASE_CONFIG = {
     let totalCount = logs.length;
     let totalDeptFee = 0;
     let totalRevenue = 0;
+    logs.forEach(s => {
+      totalDeptFee += parseFloat(s.deptFee || 0);
+      totalRevenue += parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0);
+    });
 
     const tbody = document.getElementById('serviceHistoryTable');
     tbody.innerHTML = '';
 
-    logs.forEach(s => {
-      totalDeptFee += parseFloat(s.deptFee || 0);
-      totalRevenue += parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0);
-
+    const visibleLogs = serviceHistoryShowAll ? logs : logs.slice(0, 7);
+    visibleLogs.forEach(s => {
       const tr = document.createElement('tr');
       let modeBadge = `<span class="badge badge-cash">${s.payMode}</span>`;
       if (s.payMode === 'Bank/UPI') modeBadge = `<span class="badge badge-upi">${s.payMode}</span>`;
@@ -3644,6 +3675,18 @@ const FIREBASE_CONFIG = {
     document.getElementById('summaryCount').innerText = totalCount;
     document.getElementById('summaryTodayDeptFee').innerText = `₹${totalDeptFee.toFixed(2)}`;
     document.getElementById('summaryRevenue').innerText = `₹${totalRevenue.toFixed(2)}`;
+
+    var moreBox = document.getElementById('serviceHistoryShowMoreBox');
+    if (moreBox) {
+      moreBox.style.display = logs.length > 7 ? 'block' : 'none';
+      var moreBtn = moreBox.querySelector('button');
+      if (moreBtn) moreBtn.innerText = serviceHistoryShowAll ? 'View Less' : 'View More Entries (' + logs.length + ' total)';
+    }
+    var svcWrap = document.getElementById('serviceHistoryTableWrap');
+    if (svcWrap) {
+      svcWrap.style.maxHeight = serviceHistoryShowAll ? '420px' : 'none';
+      svcWrap.style.overflowY = serviceHistoryShowAll ? 'auto' : 'visible';
+    }
   }
 
   function deleteServiceRecord(id) {
@@ -3843,13 +3886,13 @@ const FIREBASE_CONFIG = {
 
     const logs = appData.expenseLog.filter(e => e.date.substring(0, 7) === month).sort((a, b) => entryDateTimeValue(b) - entryDateTimeValue(a));
     let totalExp = 0;
+    logs.forEach(e => { totalExp += parseFloat(e.amount || 0); });
 
     const tbody = document.getElementById('expenseHistoryTable');
     tbody.innerHTML = '';
 
-    logs.forEach(e => {
-      totalExp += parseFloat(e.amount || 0);
-
+    const visibleLogs = expenseHistoryShowAll ? logs : logs.slice(0, 7);
+    visibleLogs.forEach(e => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${e.date} <span style="font-size:0.75rem; color:var(--text-muted);">${e.time || ''}</span></td>
@@ -3870,6 +3913,18 @@ const FIREBASE_CONFIG = {
 
     document.getElementById('expDispTotalDeducted').innerText = `₹${totalExp.toFixed(2)}`;
     document.getElementById('expenseTotalSum').innerText = `₹${totalExp.toFixed(2)}`;
+
+    var moreBox = document.getElementById('expenseHistoryShowMoreBox');
+    if (moreBox) {
+      moreBox.style.display = logs.length > 7 ? 'block' : 'none';
+      var moreBtn = moreBox.querySelector('button');
+      if (moreBtn) moreBtn.innerText = expenseHistoryShowAll ? 'View Less' : 'View More Entries (' + logs.length + ' total)';
+    }
+    var expWrap = document.getElementById('expenseHistoryTableWrap');
+    if (expWrap) {
+      expWrap.style.maxHeight = expenseHistoryShowAll ? '420px' : 'none';
+      expWrap.style.overflowY = expenseHistoryShowAll ? 'auto' : 'visible';
+    }
   }
 
   function deleteExpenseRecord(id) {
@@ -3948,6 +4003,11 @@ const FIREBASE_CONFIG = {
 
   var transferHistoryShowAll = false;
   var adminTransferHistoryShowAll = false;
+  var serviceHistoryShowAll = false;
+  var expenseHistoryShowAll = false;
+  var historicalMonthsShowAll = false;
+  var masterCatalogShowAll = false;
+  var staffMasterCatalogShowAll = false;
 
   function toggleTransferHistoryShowMore() {
     transferHistoryShowAll = !transferHistoryShowAll;
@@ -3957,6 +4017,31 @@ const FIREBASE_CONFIG = {
   function toggleAdminTransferHistoryShowMore() {
     adminTransferHistoryShowAll = !adminTransferHistoryShowAll;
     renderAdminTransferTab();
+  }
+
+  function toggleServiceHistoryShowMore() {
+    serviceHistoryShowAll = !serviceHistoryShowAll;
+    renderServicesTab();
+  }
+
+  function toggleExpenseHistoryShowMore() {
+    expenseHistoryShowAll = !expenseHistoryShowAll;
+    renderExpenseTab();
+  }
+
+  function toggleHistoricalMonthsShowMore() {
+    historicalMonthsShowAll = !historicalMonthsShowAll;
+    renderHistoricalMonthsTable();
+  }
+
+  function toggleMasterCatalogShowMore() {
+    masterCatalogShowAll = !masterCatalogShowAll;
+    renderMasterCatalogTable();
+  }
+
+  function toggleStaffMasterCatalogShowMore() {
+    staffMasterCatalogShowAll = !staffMasterCatalogShowAll;
+    renderStaffMasterCatalog();
   }
 
   function renderTransferTab() {
@@ -4588,7 +4673,9 @@ const FIREBASE_CONFIG = {
       cumulative += parseFloat(h.serviceCharge || 0) - parseFloat(h.expense || 0);
       cumulativeByMonth[m] = cumulative;
     });
-    Object.keys(appData.historicalMonths).sort().reverse().forEach(function(m) {
+    var allMonths = Object.keys(appData.historicalMonths).sort().reverse();
+    var visibleMonths = historicalMonthsShowAll ? allMonths : allMonths.slice(0, 7);
+    visibleMonths.forEach(function(m) {
       var h = appData.historicalMonths[m];
       var net = parseFloat(h.serviceCharge || 0) - parseFloat(h.expense || 0);
       var netColor = net >= 0 ? 'var(--accent-green)' : 'var(--accent-rose)';
@@ -4603,6 +4690,18 @@ const FIREBASE_CONFIG = {
         '<td><button onclick="deleteHistoricalMonth(&#39;' + m + '&#39;)" style="background:none; color:var(--accent-rose); padding:2px 6px;"><i class="fa-solid fa-trash"></i></button></td>';
       tbody.appendChild(tr);
     });
+
+    var moreBox = document.getElementById('historicalMonthsShowMoreBox');
+    if (moreBox) {
+      moreBox.style.display = allMonths.length > 7 ? 'block' : 'none';
+      var moreBtn = moreBox.querySelector('button');
+      if (moreBtn) moreBtn.innerText = historicalMonthsShowAll ? 'View Less' : 'View More Entries (' + allMonths.length + ' total)';
+    }
+    var histWrap = document.getElementById('historicalMonthsTableWrap');
+    if (histWrap) {
+      histWrap.style.maxHeight = historicalMonthsShowAll ? '420px' : 'none';
+      histWrap.style.overflowY = historicalMonthsShowAll ? 'auto' : 'visible';
+    }
   }
 
   function deleteHistoricalMonth(m) {
@@ -4916,7 +5015,9 @@ const FIREBASE_CONFIG = {
     const tbody = document.getElementById('masterServicesTable');
     tbody.innerHTML = '';
 
-    appData.masterServices.forEach(s => {
+    var allServices = appData.masterServices.slice().reverse();
+    var visibleServices = masterCatalogShowAll ? allServices : allServices.slice(0, 7);
+    visibleServices.forEach(s => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><span class="badge badge-std-cat">${s.category}</span></td>
@@ -4929,6 +5030,18 @@ const FIREBASE_CONFIG = {
       `;
       tbody.appendChild(tr);
     });
+
+    var moreBox = document.getElementById('masterServicesShowMoreBox');
+    if (moreBox) {
+      moreBox.style.display = allServices.length > 7 ? 'block' : 'none';
+      var moreBtn = moreBox.querySelector('button');
+      if (moreBtn) moreBtn.innerText = masterCatalogShowAll ? 'View Less' : 'View More Entries (' + allServices.length + ' total)';
+    }
+    var mstWrap = document.getElementById('masterServicesTableWrap');
+    if (mstWrap) {
+      mstWrap.style.maxHeight = masterCatalogShowAll ? '420px' : 'none';
+      mstWrap.style.overflowY = masterCatalogShowAll ? 'auto' : 'visible';
+    }
   }
 
   /* Show/hide the Department Fee field in the Admin catalog form
