@@ -53,6 +53,9 @@
 
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
     body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: var(--text-main); min-height: 100vh; padding-bottom: 90px; }
+    /* Disable text selection across the app to prevent content copying */
+    body, * { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    input, textarea, select { -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
 
     /* ATMOS Shiny Logo Effect */
     .brand-logo-box {
@@ -373,6 +376,10 @@
 
     #pdfReportTemplate { display: none; }
   </style>
+<style>
+  .balance-private #dashboardBalanceRow { filter: blur(7px); user-select: none; }
+  .balance-private #dashboardBalanceRow .metric-value, .balance-private #dashboardBalanceRow .metric-sub { color: transparent !important; }
+</style>
 </head>
 <body>
 
@@ -438,7 +445,6 @@
 <div id="forgotPasswordModal" class="modal" style="display: none;">
   <div class="modal-card">
     <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--atmos-navy); margin-bottom: 6px;">Admin Password Reset</h3>
-    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">OTP will be sent to Admin registered phone via WhatsApp.</p>
     
     <div id="otpStep1">
       <button class="btn-primary" onclick="sendAdminOTP()"><i class="fa-solid fa-paper-plane"></i> Send OTP</button>
@@ -500,13 +506,13 @@
     </div>
 
     <!-- BALANCE METRICS OVERVIEW WITH LIGHT ELEGANT GRADIENTS -->
-    <div class="grid-metrics">
+    <div class="grid-metrics" id="dashboardBalanceRow">
       <div class="metric-card card-green card-cash-gradient">
         <div class="metric-header">
           <span class="metric-title" style="color: var(--accent-green);">Cash Drawer Balance</span>
           <div class="metric-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
         </div>
-        <div class="metric-value" id="dashMetricCash">₹3,000.00</div>
+        <div class="metric-value" id="dashMetricCash">₹0.00</div>
         <div class="metric-sub" style="color: var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Physical Cash in Hand</div>
       </div>
 
@@ -530,32 +536,20 @@
 
       <div class="metric-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #fff7ed 100%); border: 1px solid #d1fae5;">
         <div class="metric-header">
-          <span class="metric-title">Admin Fund Transfer Summary</span>
+          <span class="metric-title">Admin Fund Balance</span>
           <div class="metric-icon" style="background: #d1fae5; color: #10B981;"><i class="fa-solid fa-right-left"></i></div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted);">Transferred to Admin</span>
-            <span id="dashAdminTransferred" style="font-size:1rem; font-weight:800; color:#10B981;">₹0.00</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted);">Received from Admin</span>
-            <span id="dashAdminReceived" style="font-size:1rem; font-weight:800; color:#F59E0B;">₹0.00</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--border); padding-top:6px;">
-            <span style="font-size:0.72rem; font-weight:800; color:var(--atmos-navy);">Net Admin Fund Balance</span>
-            <span id="dashAdminNet" style="font-size:1.1rem; font-weight:900; color:var(--atmos-navy);">₹0.00</span>
-          </div>
-        </div>
+        <div class="metric-value" id="dashAdminNet" style="color:#10B981;">₹0.00</div>
+        <div class="metric-sub" id="dashAdminNetLabel"><i class="fa-solid fa-circle-info"></i> Net fund with admin this month</div>
       </div>
 
       <div class="metric-card card-amber">
         <div class="metric-header">
           <span class="metric-title" style="color: var(--accent-amber);">Overall Total Balance</span>
-          <div class="metric-icon"><i class="fa-solid fa-vault"></i></div>
+          <div class="metric-icon" style="cursor:pointer;" onclick="toggleBalancePrivacy()" title="Hide/Show balances"><i class="fa-solid fa-eye" id="balancePrivacyIcon"></i></div>
         </div>
-        <div class="metric-value" id="dashMetricTotalBal">₹3,000.00</div>
-        <div class="metric-sub"><i class="fa-solid fa-calculator"></i> Cash + Bank + Receivables</div>
+        <div class="metric-value" id="dashMetricTotalBal">₹0.00</div>
+        <div class="metric-sub"><i class="fa-solid fa-calculator"></i> Cash + Bank + Receivables + Admin Fund</div>
       </div>
     </div>
 
@@ -595,7 +589,6 @@
         <h3 style="font-size: 1.1rem; font-weight: 900; color: var(--atmos-navy); text-transform: uppercase;">
           <i class="fa-solid fa-shield-halved" style="color: var(--atmos-red); margin-right: 6px;"></i> Staff Controls Provided by Admin
         </h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Authorized operations for operating balance modifications and receivable settlements.</p>
       </div>
 
       <div style="background: white; padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border);">
@@ -658,13 +651,26 @@
       </div>
     </div>
 
+    <!-- STAFF OPENING BALANCE SUMMARY -->
+    <div id="staffOpeningBalSummaryCard" class="app-card" style="display: none; margin-top: 20px; border-left: 5px solid var(--accent-green);">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+        <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy);"><i class="fa-solid fa-sliders" style="color: var(--accent-green); margin-right: 6px;"></i> Monthly Opening Balance Summary</h3>
+        <div class="month-picker-box"><label>Select Month:</label><input type="month" id="staffOpeningBalMonthPicker" onchange="renderStaffOpeningBalSummary()"></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+        <div style="background:white; padding:14px; border-radius:var(--radius-md); border:1px solid var(--border);"><span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Cash Drawer</span><div id="staffObCash" style="font-size:1.2rem; font-weight:800; color:var(--accent-green);">₹0.00</div></div>
+        <div style="background:white; padding:14px; border-radius:var(--radius-md); border:1px solid var(--border);"><span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Bank / UPI</span><div id="staffObBank" style="font-size:1.2rem; font-weight:800; color:var(--primary);">₹0.00</div></div>
+        <div style="background:white; padding:14px; border-radius:var(--radius-md); border:1px solid var(--border);"><span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Receivables</span><div id="staffObCredit" style="font-size:1.2rem; font-weight:800; color:var(--accent-purple);">₹0.00</div></div>
+        <div style="background:var(--accent-amber-bg); padding:14px; border-radius:var(--radius-md); border:1px solid #fde68a;"><span style="font-size:0.7rem; font-weight:800; color:var(--accent-amber); text-transform:uppercase;">Overall Opening Balance</span><div id="staffObTotal" style="font-size:1.3rem; font-weight:900; color:var(--atmos-navy);">₹0.00</div></div>
+      </div>
+    </div>
+
     <!-- STAFF MASTER SERVICE CATALOGUE -->
     <div id="staffMasterCatalogCard" class="app-card" style="display: none; margin-top: 20px;">
       <div style="margin-bottom: 16px;">
         <h3 style="font-size: 1.1rem; font-weight: 900; color: var(--atmos-navy); text-transform: uppercase;">
           <i class="fa-solid fa-concierge-bell" style="color: var(--atmos-red); margin-right: 6px;"></i> Master Service Catalogue
         </h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">Shared service catalog. Add new services available to all staff and admin.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
@@ -694,16 +700,13 @@
         </div>
 
         <div>
-          <div id="staffMasterServicesTableWrap" style="overflow-x: auto;">
+          <div style="overflow-x: auto;">
             <table>
               <thead>
-                <tr><th>Category</th><th>Service Name</th><th>Price</th></tr>
+                <tr><th>Category</th><th>Service Name</th><th>Price</th><th>Actions</th></tr>
               </thead>
               <tbody id="staffMasterServicesTable"></tbody>
             </table>
-          </div>
-          <div id="staffMasterServicesShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
-            <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleStaffMasterCatalogShowMore()">View More Entries</button>
           </div>
         </div>
       </div>
@@ -713,7 +716,6 @@
     <div class="support-card">
       <div class="support-icon"><i class="fa-solid fa-headset"></i></div>
       <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 4px;">Need Operational Support?</h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted); max-width: 340px; margin: 0 auto 12px;">Contact system administration during working hours.</p>
       <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
         <a href="https://wa.me/918089278115" target="_blank" class="support-btn-outline" style="border-color: #10b981; color: #059669;">
           <i class="fa-brands fa-whatsapp"></i> 8089278115 (WhatsApp)
@@ -879,7 +881,7 @@
         <i class="fa-solid fa-lock"></i> Selected month is CLOSED. Normal editing and deleting are restricted.
       </div>
 
-      <div id="serviceHistoryTableWrap" style="overflow-x: auto;">
+      <div style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
@@ -897,9 +899,6 @@
           <tbody id="serviceHistoryTable"></tbody>
         </table>
       </div>
-      <div id="serviceHistoryShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
-        <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleServiceHistoryShowMore()">View More Entries</button>
-      </div>
     </div>
   </div>
 
@@ -915,7 +914,6 @@
           <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy);">
             <i class="fa-solid fa-building-columns" style="color: var(--atmos-red); margin-right: 6px;"></i> Shop Operating Balances
           </h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Log shop operating expenses paid strictly for shop overhead domain.</p>
         </div>
         <div class="month-picker-box">
           <label>Operating Month:</label>
@@ -926,7 +924,7 @@
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: white; padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border);">
         <div>
           <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Cash Drawer Balance</span>
-          <div id="expDispCashBal" style="font-size: 1.2rem; font-weight: 800; color: var(--accent-green);">₹3,000.00</div>
+          <div id="expDispCashBal" style="font-size: 1.2rem; font-weight: 800; color: var(--accent-green);">₹0.00</div>
         </div>
         <div>
           <span style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Bank Account Balance</span>
@@ -959,6 +957,7 @@
               <option value="Shop Rent">Shop Rent</option>
               <option value="Maintenance & Repairs">Maintenance & Repairs</option>
               <option value="Miscellaneous Shop Purchase">Miscellaneous Shop Purchase</option>
+              <option value="Salary / Salary Advance">Salary / Salary Advance</option>
             </select>
           </div>
 
@@ -1014,7 +1013,7 @@
         <i class="fa-solid fa-lock"></i> Selected month is CLOSED. Editing and deleting are restricted.
       </div>
 
-      <div id="expenseHistoryTableWrap" style="overflow-x: auto;">
+      <div style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
@@ -1030,9 +1029,6 @@
           <tbody id="expenseHistoryTable"></tbody>
         </table>
       </div>
-      <div id="expenseHistoryShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
-        <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleExpenseHistoryShowMore()">View More Entries</button>
-      </div>
     </div>
   </div>
 
@@ -1046,9 +1042,6 @@
       <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
         Internal Cash Transfers (Strictly Separate Domain)
       </h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-        Cash transferred between the Drawer and Bank is an internal transfer. These transfers only update the Bank and Drawer Balance.
-      </p>
 
       <form onsubmit="recordInternalTransfer(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: flex-end;">
         <div class="form-group" style="margin: 0;">
@@ -1108,9 +1101,6 @@
       <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
         <i class="fa-solid fa-user-shield" style="color: #10B981; margin-right: 6px;"></i> Admin Fund Transfers
       </h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-        Record fund movements between the Shop and Admin. Transfer to Admin reduces Bank/UPI balance (no profit impact). Received from Admin increases Bank/UPI balance and reduces cumulative profit.
-      </p>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
         <form onsubmit="recordAdminTransfer(event, 'TransferToAdmin')" style="background: #f0fdf4; padding: 16px; border-radius: var(--radius-md); border: 1px solid #d1fae5;">
           <h4 style="font-size: 0.95rem; font-weight: 800; color: #10B981; margin-bottom: 12px;">
@@ -1119,6 +1109,13 @@
           <div class="form-group">
             <label>Transaction Date</label>
             <input type="date" id="adminTransferDateInput" required>
+          </div>
+          <div class="form-group">
+            <label>Transfer From (Source Account)</label>
+            <select id="adminTransferSourceInput">
+              <option value="Bank/UPI">Bank / UPI</option>
+              <option value="Cash Drawer">Cash Drawer</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Description (Optional)</label>
@@ -1300,7 +1297,6 @@
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
         <div>
           <h3 style="font-size: 1.1rem; font-weight: 900; color: var(--atmos-navy);">Monthly Financial Statement</h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Consolidated monthly ledger excluding internal drawer transfers.</p>
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -1309,7 +1305,12 @@
             <label>Select Month:</label>
             <input type="month" id="reportMonthPicker" onchange="generateFinancialReport()">
           </div>
-          <button class="btn-pdf" onclick="exportReportPDF('daily')"><i class="fa-solid fa-file-pdf"></i> Daily PDF</button>
+          <div class="month-picker-box" style="margin-left:auto;">
+            <i class="fa-solid fa-calendar-day" style="color: var(--atmos-navy);"></i>
+            <label>Daily Date:</label>
+            <input type="date" id="dailyPdfDate">
+            <button class="btn-pdf" onclick="exportDailyPDF()"><i class="fa-solid fa-file-pdf"></i> Daily PDF</button>
+          </div>
           <button class="btn-pdf" onclick="exportReportPDF('monthly')" style="background: var(--atmos-navy);"><i class="fa-solid fa-file-pdf"></i> Monthly PDF</button>
         </div>
       </div>
@@ -1377,7 +1378,6 @@
           <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy);">
             <i class="fa-solid fa-chart-pie" style="color: var(--accent-green); margin-right: 6px;"></i> HR Monthly Financial Management
           </h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Overview of collections, expenses, net balance, and cumulative overall profit.</p>
         </div>
         <div class="month-picker-box">
           <label>Select Month & Year:</label>
@@ -1410,35 +1410,29 @@
       <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
         <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-amber); margin-right: 6px;"></i> Historical Monthly Financial Data Entry
       </h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-        Enter historical monthly totals for previous months/years where detailed transaction data is not available. Historical Net Balance = Service Charge - Expense. This contributes to cumulative profit without creating fake transactions.
-      </p>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-        <form onsubmit="saveHistoricalMonth(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end;">
-          <div class="form-group" style="margin-bottom: 0;">
+        <form onsubmit="saveHistoricalMonth(event)" style="display: grid; grid-template-columns: 1fr; gap: 4px;">
+          <div class="form-group" style="margin-bottom: 10px;">
             <label>Month & Year</label>
             <input type="month" id="historicalMonthPicker" required>
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
+          <div class="form-group" style="margin-bottom: 10px;">
             <label>Total Service Charge (₹)</label>
             <input type="number" id="historicalServiceCharge" min="0" placeholder="e.g. 100000" required style="font-weight:800; color:var(--accent-green);">
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
+          <div class="form-group" style="margin-bottom: 10px;">
             <label>Total Expense (₹)</label>
             <input type="number" id="historicalExpense" min="0" placeholder="e.g. 70000" required style="font-weight:800; color:var(--accent-rose);">
           </div>
-          <button type="submit" class="btn-primary" style="background: var(--accent-amber); grid-column: 1 / -1;">Save Historical Month Data</button>
+          <button type="submit" class="btn-primary" style="background: var(--accent-amber); margin-top: 6px;">Save Historical Month Data</button>
         </form>
-        <div id="historicalMonthsTableWrap" style="overflow-x: auto;">
+        <div style="overflow-x: auto;">
           <table>
             <thead>
               <tr><th>Month</th><th>Service Charge</th><th>Expense</th><th>Net Balance</th><th>Cumulative Profit</th><th>Action</th></tr>
             </thead>
             <tbody id="historicalMonthsTableBody"></tbody>
           </table>
-        </div>
-        <div id="historicalMonthsShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
-          <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleHistoricalMonthsShowMore()">View More Entries</button>
         </div>
       </div>
     </div>
@@ -1457,9 +1451,6 @@
       <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
         <i class="fa-solid fa-lock" style="color: var(--atmos-red); margin-right: 6px;"></i> Admin Control - Month Closing
       </h3>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-        Lock operational records for selected month. Closing a month transfers/settles Cash Drawer and Bank/UPI balances to Admin Bank Account so they become zero, while preserving previous Pending Receivables.
-      </p>
       
       <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
         <div class="month-picker-box">
@@ -1468,6 +1459,24 @@
         </div>
         <span id="closingStatusBadge" class="badge badge-open">Status: Open</span>
         <button id="btnCloseMonthToggle" class="btn-admin" onclick="toggleMonthClosing()" style="width: auto;">Close Month & Transfer Balances</button>
+        <button id="btnSaveMonthToHistorical" class="btn-primary" onclick="saveCurrentMonthToHistorical()" style="width: auto; background: var(--accent-amber); display: none;">Save Final Month to Historical Data</button>
+      </div>
+
+      <div id="monthClosingReviewPanel" style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+        <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--atmos-navy); margin-bottom: 12px; text-transform: uppercase;">
+          <i class="fa-solid fa-clipboard-list" style="color: var(--atmos-red);"></i> Month-End Financial Review
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+          <div style="background:white; padding:10px 12px; border-radius:8px; border:1px solid var(--border);"><span style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Cash Drawer</span><div id="mcReviewCash" style="font-size:1.05rem; font-weight:800; color:var(--accent-green);">₹0.00</div></div>
+          <div style="background:white; padding:10px 12px; border-radius:8px; border:1px solid var(--border);"><span style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Bank / UPI</span><div id="mcReviewBank" style="font-size:1.05rem; font-weight:800; color:var(--primary);">₹0.00</div></div>
+          <div style="background:white; padding:10px 12px; border-radius:8px; border:1px solid var(--border);"><span style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Receivables</span><div id="mcReviewCredit" style="font-size:1.05rem; font-weight:800; color:var(--accent-purple);">₹0.00</div></div>
+          <div style="background:white; padding:10px 12px; border-radius:8px; border:1px solid var(--border);"><span style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Total Service Charge</span><div id="mcReviewServiceCharge" style="font-size:1.05rem; font-weight:800; color:var(--accent-green);">₹0.00</div></div>
+          <div style="background:white; padding:10px 12px; border-radius:8px; border:1px solid var(--border);"><span style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Total Expenses (incl. Salary)</span><div id="mcReviewExpenses" style="font-size:1.05rem; font-weight:800; color:var(--accent-rose);">₹0.00</div></div>
+          <div style="background:white; padding:10px 12px; border-radius:8px; border:1px solid var(--border);"><span style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Salary / Salary Advance</span><div id="mcReviewSalary" style="font-size:1.05rem; font-weight:800; color:var(--accent-rose);">₹0.00</div></div>
+          <div style="background:white; padding:10px 12px; border-radius:8px; border:1px solid var(--border);"><span style="font-size:0.65rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Admin Fund Transfers (Net)</span><div id="mcReviewAdminTransfers" style="font-size:1.05rem; font-weight:800; color:#10B981;">₹0.00</div></div>
+          <div style="background:var(--accent-amber-bg); padding:10px 12px; border-radius:8px; border:1px solid #fde68a;"><span style="font-size:0.65rem; font-weight:800; color:var(--accent-amber); text-transform:uppercase;">Net Profit</span><div id="mcReviewNetProfit" style="font-size:1.2rem; font-weight:900; color:var(--atmos-navy);">₹0.00</div></div>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:10px;"><i class="fa-solid fa-circle-info"></i> Net Profit = Total Service Charge − Total Expenses (including Salary). Admin Fund Transfers do not affect profit. Review and correct any entries above before closing.</p>
       </div>
 
       <div id="pendingReceivableBanner" style="display: none; background: #f3e8ff; border: 1px solid #7c3aed; padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 800; color: #6b21a8; margin-top: 10px;">
@@ -1486,18 +1495,19 @@
           <input type="month" id="salaryMonthPicker" onchange="renderStaffSalaryTable()">
         </div>
       </div>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; font-weight: 600; color: var(--atmos-navy);">
-        Configure basic salary independently for each month. Incentive: 20% of eligible collections exceeding basic salary.
-      </p>
       <div style="overflow-x: auto;">
         <table>
           <thead>
             <tr>
               <th>STAFF NAME</th>
               <th>BASIC SALARY (₹)</th>
+              <th>INCENTIVE (%)</th>
               <th>SERVICE CHARGE COLLECTED (₹)</th>
-              <th>INCENTIVE (20% OVER BASIC SALARY)</th>
+              <th>INCENTIVE AMOUNT (₹)</th>
+              <th>ATTENDANCE %</th>
+              <th>ATTENDANCE ADJUSTMENT (₹)</th>
               <th>TOTAL PAYABLE SALARY (₹)</th>
+              <th>ACTION</th>
             </tr>
           </thead>
           <tbody id="staffSalaryTableBody"></tbody>
@@ -1517,12 +1527,12 @@
           <input type="month" id="openingBalMonthPicker" onchange="loadAdminOpeningBalancesForPicker()">
         </div>
       </div>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Set starting balances independently for physical cash drawer (Default ₹3,000), bank/UPI account, and credit receivables.</p>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">Set the actual starting balances for physical cash drawer, bank/UPI account, and credit receivables. No default is applied — enter the real opening balance (e.g. Cash ₹2,000 + Bank ₹2,000 + Receivables ₹1,000 = ₹5,000 total).</p>
       
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px;">
         <div class="form-group">
           <label>Starting Cash Drawer Balance (₹)</label>
-          <input type="number" id="adminOpeningCashInput" value="3000" style="font-weight: 800; color: var(--accent-green);">
+          <input type="number" id="adminOpeningCashInput" value="0" style="font-weight: 800; color: var(--accent-green);">
         </div>
         <div class="form-group">
           <label>Starting Bank/UPI Balance (₹)</label>
@@ -1549,9 +1559,10 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
         <button class="btn-primary" style="width: auto; font-size: 0.8rem;" onclick="setStaffReportTab('overall')">Overall Staff Report</button>
         <button class="btn-primary" style="width: auto; font-size: 0.8rem; background: var(--atmos-navy-light);" onclick="setStaffReportTab('wise')">Staff-Wise Report</button>
+        <button class="btn-pdf" onclick="exportStaffReportPDF()" style="width: auto;"><i class="fa-solid fa-file-pdf"></i> Download Staff Report PDF</button>
       </div>
 
       <div id="staffReportOverallView">
@@ -1687,16 +1698,13 @@
         <!-- MASTER CATALOG TABLE -->
         <div class="app-card">
           <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 16px;">Master Service Catalog</h3>
-          <div id="masterServicesTableWrap" style="overflow-x: auto;">
+          <div style="overflow-x: auto;">
             <table>
               <thead>
                 <tr><th>Category</th><th>Service Name</th><th>Price</th><th>Actions</th></tr>
               </thead>
               <tbody id="masterServicesTable"></tbody>
             </table>
-          </div>
-          <div id="masterServicesShowMoreBox" style="text-align:center; margin-top:10px; display:none;">
-            <button class="btn-primary" style="width:auto; background: var(--atmos-navy-light);" onclick="toggleMasterCatalogShowMore()">View More Entries</button>
           </div>
         </div>
 
@@ -1707,7 +1715,6 @@
         <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
           <i class="fa-solid fa-cloud-arrow-up" style="color: var(--primary); margin-right: 6px;"></i> Firebase Realtime Cloud Database Live Sync
         </h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Connect all devices live across laptops, mobile phones, Chrome, Firefox, and Edge.</p>
         
         <div class="form-group">
           <label>Firebase Database URL</label>
@@ -1721,9 +1728,6 @@
         <h3 style="font-size: 1.05rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">
           <i class="fa-solid fa-image" style="color: var(--atmos-red); margin-right: 6px;"></i> Shop Logo Management
         </h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-          Upload a logo image from your gallery. The logo appears on CSC invoices and remains until replaced with another image.
-        </p>
         <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
           <div id="shopLogoPreviewBox" style="width: 130px; height: 130px; border: 2px dashed var(--border); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--bg); overflow: hidden;">
             <span id="shopLogoPlaceholder" style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700;">No Logo</span>
@@ -1926,6 +1930,7 @@
         <option value="Shop Rent">Shop Rent</option>
         <option value="Maintenance & Repairs">Maintenance & Repairs</option>
         <option value="Miscellaneous Shop Purchase">Miscellaneous Shop Purchase</option>
+        <option value="Salary / Salary Advance">Salary / Salary Advance</option>
       </select>
     </div>
     <div class="form-group">
@@ -2073,9 +2078,16 @@
     </div>
     <div class="form-group">
       <label>Transfer Type</label>
-      <select id="editAdminTransferType">
+      <select id="editAdminTransferType" onchange="toggleEditAdminTransferSource()">
         <option value="TransferToAdmin">Transfer to Admin</option>
         <option value="ReceivedFromAdmin">Received from Admin</option>
+      </select>
+    </div>
+    <div class="form-group" id="editAdminTransferSourceGroup">
+      <label>Transfer From (Source Account)</label>
+      <select id="editAdminTransferSource">
+        <option value="Bank/UPI">Bank / UPI</option>
+        <option value="Cash Drawer">Cash Drawer</option>
       </select>
     </div>
     <div class="form-group">
@@ -2133,6 +2145,10 @@
       <label>Basic Salary for Selected Month (₹)</label>
       <input type="number" id="editProfSalaryInput" min="0" required>
     </div>
+    <div class="form-group">
+      <label>Incentive (%) — 0 to 100</label>
+      <input type="number" id="editProfIncentivePctInput" min="0" max="100" placeholder="e.g. 20" required>
+    </div>
     <div style="display: flex; gap: 10px; margin-top: 16px;">
       <button style="flex: 1; background: var(--bg); color: var(--text-muted);" onclick="closeEditStaffInfoModal()">Cancel</button>
       <button style="flex: 1;" class="btn-primary" onclick="saveAdminStaffInfoEdit()">Save Changes</button>
@@ -2156,7 +2172,6 @@
     <div style="font-size: 3rem; margin-bottom: 10px;">🎉🏆</div>
     <h2 style="font-size: 1.3rem; font-weight: 900; color: var(--atmos-navy); margin-bottom: 6px;">🎉 Milestone Unlocked!</h2>
     <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--accent-amber); margin-bottom: 14px;">20% Incentive Activated! 🏆</h3>
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Congratulations! Your cumulative monthly service charges have reached your basic salary amount!</p>
     <button class="btn-primary" onclick="closeMilestoneModal()" style="background: var(--accent-amber);">Awesome!</button>
   </div>
 </div>
@@ -2351,6 +2366,8 @@ const FIREBASE_CONFIG = {
     document.getElementById('adminReceivedDateInput').value = todayStr;
     document.getElementById('adminTransferLogMonthPicker').value = monthStr;
     document.getElementById('historicalMonthPicker').value = monthStr;
+    var staffObPicker = document.getElementById('staffOpeningBalMonthPicker');
+    if (staffObPicker) staffObPicker.value = monthStr;
   }
 
   /* LOCAL & CLOUD STORAGE HANDLING */
@@ -2421,7 +2438,8 @@ const FIREBASE_CONFIG = {
       staffSalariesMonthwise: Object.keys(appData.monthlySalaries).reduce((acc, m) => {
         acc[m] = {};
         Object.keys(appData.monthlySalaries[m]).forEach(st => {
-          acc[m][st] = appData.monthlySalaries[m][st].basic;
+          var s = appData.monthlySalaries[m][st];
+          acc[m][st] = { basic: s.basic, incentivePct: s.incentivePct !== undefined ? s.incentivePct : 20, attAdjustment: s.attAdjustment || 0, finalized: s.finalized || false, finalizedAmount: s.finalizedAmount || 0 };
         });
         return acc;
       }, {}),
@@ -2430,7 +2448,7 @@ const FIREBASE_CONFIG = {
       staffProfiles: appData.staffProfiles || {},
       appLogo: appData.logoDataUrl || '',
       adminTransfers: (appData.adminTransfers || []).slice().reverse().map(function(at) {
-        return { id: at.id, date: at.date, time: at.time || "", timestamp: at.timestamp || Date.now(), type: at.type, desc: at.desc || "", amount: at.amount, user: at.staff || "" };
+        return { id: at.id, date: at.date, time: at.time || "", timestamp: at.timestamp || Date.now(), type: at.type, source: at.source || "Bank/UPI", desc: at.desc || "", amount: at.amount, user: at.staff || "" };
       }),
       historicalMonths: appData.historicalMonths || {},
       adminMessages: [],
@@ -2637,7 +2655,11 @@ const FIREBASE_CONFIG = {
         const monthSal = legacy.staffSalariesMonthwise[m] || {};
         Object.keys(monthSal).forEach(st => {
           const v = monthSal[st];
-          ms[m][st] = (v && typeof v === 'object') ? { basic: parseFloat(v.basic) || 0 } : { basic: parseFloat(v) || 0 };
+          if (v && typeof v === 'object') {
+            ms[m][st] = { basic: parseFloat(v.basic) || 0, incentivePct: (v.incentivePct !== undefined) ? parseFloat(v.incentivePct) : 20, attAdjustment: parseFloat(v.attAdjustment || 0), finalized: !!v.finalized, finalizedAmount: parseFloat(v.finalizedAmount || 0) };
+          } else {
+            ms[m][st] = { basic: parseFloat(v) || 0, incentivePct: 20, attAdjustment: 0, finalized: false };
+          }
         });
       });
       out.monthlySalaries = ms;
@@ -2667,6 +2689,7 @@ const FIREBASE_CONFIG = {
           time: e.time || istTimeFromTimestamp(e.timestamp),
           timestamp: e.timestamp,
           type: e.type === 'ReceivedFromAdmin' ? 'ReceivedFromAdmin' : 'TransferToAdmin',
+          source: e.source || 'Bank/UPI',
           desc: e.desc || e.description || "",
           amount: parseFloat(e.amount) || 0,
           staff: e.user || e.staff || ""
@@ -2997,7 +3020,7 @@ const FIREBASE_CONFIG = {
      CALCULATE OPERATING BALANCES
   --------------------------------------------------- */
   function getOperatingBalances(upToMonthStr = null) {
-    let cash = 3000;
+    let cash = 0;
     let bank = 0;
     let credit = 0;
 
@@ -3006,7 +3029,7 @@ const FIREBASE_CONFIG = {
     // Check if opening balances configured for this month
     if (appData.openingBalances[filterMonth]) {
       const op = appData.openingBalances[filterMonth];
-      cash = parseFloat(op.cash || 3000);
+      cash = parseFloat(op.cash || 0);
       bank = parseFloat(op.bank || 0);
       credit = parseFloat(op.credit || 0);
     }
@@ -3058,13 +3081,16 @@ const FIREBASE_CONFIG = {
       }
     });
 
-    // Process Admin Fund Transfers (affect Bank/UPI balance only)
+    // Process Admin Fund Transfers — Transfer to Admin reduces the selected source; Received from Admin increases Bank/UPI.
+    // Deleted transfers are never recreated: this loop only reads live appData.adminTransfers records.
     (appData.adminTransfers || []).forEach(function(at) {
       var atMonth = (at.date || '').substring(0, 7);
       if (atMonth !== filterMonth) return;
       var amt = parseFloat(at.amount || 0);
       if (at.type === 'TransferToAdmin') {
-        bank -= amt;
+        var src = at.source || 'Bank/UPI';
+        if (src === 'Cash Drawer') cash -= amt;
+        else bank -= amt;
       } else if (at.type === 'ReceivedFromAdmin') {
         bank += amt;
       }
@@ -3081,33 +3107,105 @@ const FIREBASE_CONFIG = {
     document.getElementById('dashMetricCash').innerText = `₹${bal.cash.toFixed(2)}`;
     document.getElementById('dashMetricBank').innerText = `₹${bal.bank.toFixed(2)}`;
     document.getElementById('dashMetricCredit').innerText = `₹${bal.credit.toFixed(2)}`;
-    document.getElementById('dashMetricTotalBal').innerText = `₹${bal.total.toFixed(2)}`;
+    var _afNet = (function(){ var m=getISTMonthStr(),s=0,r=0; (appData.adminTransfers||[]).forEach(function(at){ if((at.date||'').substring(0,7)!==m) return; if(at.type==='TransferToAdmin') s+=parseFloat(at.amount||0); else if(at.type==='ReceivedFromAdmin') r+=parseFloat(at.amount||0); }); return s-r; })();
+    document.getElementById('dashMetricTotalBal').innerText = `₹${(bal.cash + bal.bank + bal.credit + _afNet).toFixed(2)}`;
 
     renderAdminFundSummary();
 
     renderDashboardOverviewForDate();
     renderStaffControlsArea();
+    renderStaffOpeningBalSummary();
     renderStaffMasterCatalog();
   }
 
   /* ADMIN FUND TRANSFER SUMMARY (Dashboard) */
   function renderAdminFundSummary() {
+    var month = getISTMonthStr();
     var transferred = 0, received = 0;
     (appData.adminTransfers || []).forEach(function(at) {
+      if ((at.date || '').substring(0, 7) !== month) return;
       var amt = parseFloat(at.amount || 0);
       if (at.type === 'TransferToAdmin') transferred += amt;
       else if (at.type === 'ReceivedFromAdmin') received += amt;
     });
     var net = transferred - received;
-    var tEl = document.getElementById('dashAdminTransferred');
-    var rEl = document.getElementById('dashAdminReceived');
     var nEl = document.getElementById('dashAdminNet');
-    if (tEl) tEl.innerText = '₹' + transferred.toFixed(2);
-    if (rEl) rEl.innerText = '₹' + received.toFixed(2);
+    var lEl = document.getElementById('dashAdminNetLabel');
     if (nEl) {
-      nEl.innerText = '₹' + net.toFixed(2);
+      nEl.innerText = '₹' + Math.abs(net).toFixed(2);
       nEl.style.color = net >= 0 ? '#10B981' : '#F59E0B';
     }
+    if (lEl) lEl.innerHTML = net >= 0 ? '<i class="fa-solid fa-arrow-trend-up"></i> Fund with Admin' : '<i class="fa-solid fa-arrow-trend-down"></i> Fund from Admin';
+  }
+
+  function toggleBalancePrivacy() {
+    document.body.classList.toggle('balance-private');
+    var ic = document.getElementById('balancePrivacyIcon');
+    if (ic) ic.className = document.body.classList.contains('balance-private') ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+  }
+
+  function computeBalancesUpTo(dateStr, inclusive) {
+    var month = dateStr.substring(0, 7);
+    var op = appData.openingBalances[month] || { cash: 0, bank: 0, credit: 0 };
+    var cash = parseFloat(op.cash || 0), bank = parseFloat(op.bank || 0), credit = parseFloat(op.credit || 0);
+    var adminSent = 0, adminRecv = 0;
+    function skip(d){ return inclusive ? (d > dateStr) : (d >= dateStr); }
+    (appData.serviceLog || []).forEach(function(s){ if (s.date.substring(0,7) !== month) return; if (skip(s.date)) return; var total = parseFloat(s.total||0), df = parseFloat(s.deptFee||0); if (df > 0) bank -= df; if (s.isSplit || s.payMode === 'Split Payment') { cash += parseFloat(s.splitCash||0); bank += parseFloat(s.splitBank||0); credit += parseFloat(s.splitReceivable||0); } else if (s.payMode === 'Cash Drawer') cash += total; else if (s.payMode === 'Bank/UPI') bank += total; else if (s.payMode === 'Receivables/Credit') credit += total; });
+    (appData.expenseLog || []).forEach(function(e){ if (e.date.substring(0,7) !== month) return; if (skip(e.date)) return; var amt = parseFloat(e.amount||0); if (e.payMode === 'Cash Drawer') cash -= amt; else if (e.payMode === 'Bank/UPI') bank -= amt; });
+    (appData.transferLog || []).forEach(function(tr){ if (tr.date.substring(0,7) !== month) return; if (skip(tr.date)) return; var amt = parseFloat(tr.amount||0); if (tr.direction === 'CashToBank') { cash -= amt; bank += amt; } else if (tr.direction === 'BankToCash') { bank -= amt; cash += amt; } });
+    (appData.adminTransfers || []).forEach(function(at){ if ((at.date||'').substring(0,7) !== month) return; if (skip(at.date || '')) return; var amt = parseFloat(at.amount||0); if (at.type === 'TransferToAdmin') { var src = at.source || 'Bank/UPI'; if (src === 'Cash Drawer') cash -= amt; else bank -= amt; adminSent += amt; } else if (at.type === 'ReceivedFromAdmin') { bank += amt; adminRecv += amt; } });
+    var adminNet = adminSent - adminRecv;
+    return { cash: cash, bank: bank, credit: credit, adminNet: adminNet, total: cash + bank + credit + adminNet };
+  }
+
+  function exportDailyPDF() {
+    var date = document.getElementById('dailyPdfDate').value || getISTDateStr();
+    var open = computeBalancesUpTo(date, false);
+    var close = computeBalancesUpTo(date, true);
+    var txns = [];
+    (appData.serviceLog || []).forEach(function(s){ if (s.date === date) txns.push({ kind:'Service', time:s.time||'', ts:parseFloat(s.timestamp||0), desc:s.desc||'', staff:s.staff||'', net:(parseFloat(s.serviceCharge||0)-parseFloat(s.discount||0)), df:parseFloat(s.deptFee||0), amt:null }); });
+    (appData.expenseLog || []).forEach(function(e){ if (e.date === date) txns.push({ kind:'Expense', time:e.time||'', ts:parseFloat(e.timestamp||0), desc:(e.desc||'')+(e.category?(' ('+e.category+')'):''), staff:e.staff||'', net:null, df:null, amt:parseFloat(e.amount||0) }); });
+    txns.sort(function(a,b){ if (b.ts !== a.ts) return b.ts - a.ts; return (b.time||'').localeCompare(a.time||''); });
+    function box(label, val, color){ return '<div style="flex:1 1 18%; min-width:120px; border:1px solid #e2e8f0; padding:8px; border-radius:6px; background:#f8fafc;"><span style="font-size:9px; color:#64748b; font-weight:bold;">'+label+'</span><div style="font-size:13px; font-weight:bold; color:'+(color||'#0B1E2D')+';">₹'+val.toFixed(2)+'</div></div>'; }
+    var openHtml = '<div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">' + box('Cash in Drawer', open.cash, '#059669') + box('Bank / UPI', open.bank, '#2563eb') + box('Receivables', open.credit, '#7c3aed') + box('Fund from Admin', open.adminNet, open.adminNet>=0?'#10B981':'#F59E0B') + box('Overall Total', open.total, '#0B1E2D') + '</div>';
+    var closeHtml = '<div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">' + box('Cash in Drawer', close.cash, '#059669') + box('Bank / UPI', close.bank, '#2563eb') + box('Receivables', close.credit, '#7c3aed') + box('Fund with Admin', close.adminNet, close.adminNet>=0?'#10B981':'#F59E0B') + box('Overall Total', close.total, '#0B1E2D') + '</div>';
+    var rows = txns.map(function(tx){
+      var netCell = tx.net!==null ? '<span style="color:#059669; font-weight:bold;">₹'+tx.net.toFixed(2)+'</span>' : '-';
+      var dfCell = (tx.df!=null && tx.kind==='Service') ? '₹'+tx.df.toFixed(2) : '-';
+      var amtCell = tx.amt!==null ? '<span style="color:#e11d48; font-weight:bold;">₹'+tx.amt.toFixed(2)+'</span>' : '-';
+      var badge = tx.kind==='Service' ? '<span style="background:#dcfce7; color:#059669; padding:2px 6px; border-radius:4px; font-size:9px;">Service</span>' : '<span style="background:#fee2e2; color:#e11d48; padding:2px 6px; border-radius:4px; font-size:9px;">Expense</span>';
+      return '<tr><td style="padding:5px; border:1px solid #cbd5e1;">'+badge+'</td><td style="padding:5px; border:1px solid #cbd5e1;">'+(tx.time||'')+'</td><td style="padding:5px; border:1px solid #cbd5e1;">'+(tx.desc||'')+'</td><td style="padding:5px; border:1px solid #cbd5e1;">'+netCell+'</td><td style="padding:5px; border:1px solid #cbd5e1;">'+dfCell+'</td><td style="padding:5px; border:1px solid #cbd5e1;">'+amtCell+'</td><td style="padding:5px; border:1px solid #cbd5e1;">'+(tx.staff||'')+'</td></tr>';
+    }).join('');
+    if (!rows) rows = '<tr><td colspan="7" style="padding:8px; border:1px solid #cbd5e1; text-align:center; color:#64748b;">No transactions on this date</td></tr>';
+    var html = '<div style="padding:20px; background:white; color:#0f172a;">' +
+      '<div style="display:flex; justify-content:space-between; border-bottom:2px solid #0B1E2D; padding-bottom:10px; margin-bottom:12px;"><div><h1 style="font-size:18px; color:#0B1E2D; margin:0;">ATMOS DIGITAL SOLUTIONS</h1><p style="font-size:11px; color:#EE2B2E; font-weight:bold; margin:2px 0 0 0;">DAILY FINANCIAL STATEMENT</p></div><div style="text-align:right; font-size:10px; color:#64748b;"><p style="font-size:12px; font-weight:bold; color:#0B1E2D; margin:0;">Date: '+date+'</p><p style="margin:2px 0 0 0;">Generated: '+getISTDateTimeStr()+'</p></div></div>' +
+      '<p style="font-size:10px; font-weight:bold; color:#0B1E2D; margin:8px 0 4px 0;">OPENING BALANCE</p>' + openHtml +
+      '<p style="font-size:10px; font-weight:bold; color:#0B1E2D; margin:12px 0 4px 0;">TRANSACTIONS (latest first)</p>' +
+      '<table style="width:100%; border-collapse:collapse; font-size:10px;"><thead><tr style="background:#f1f5f9;"><th style="padding:5px; border:1px solid #cbd5e1;">Type</th><th style="padding:5px; border:1px solid #cbd5e1;">Time</th><th style="padding:5px; border:1px solid #cbd5e1;">Description</th><th style="padding:5px; border:1px solid #cbd5e1;">Net Income (₹)</th><th style="padding:5px; border:1px solid #cbd5e1;">Dept Fee (₹)</th><th style="padding:5px; border:1px solid #cbd5e1;">Expense (₹)</th><th style="padding:5px; border:1px solid #cbd5e1;">Staff</th></tr></thead><tbody>'+rows+'</tbody></table>' +
+      '<p style="font-size:10px; font-weight:bold; color:#0B1E2D; margin:12px 0 4px 0;">CLOSING BALANCE</p>' + closeHtml +
+      '</div>';
+    var container = document.createElement('div');
+    container.style.width = '800px'; container.style.background = '#ffffff';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    var opt = { margin: 0.5, filename: 'ATMOS_Daily_Report_'+date+'.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+    html2pdf().set(opt).from(container).save().then(function(){ document.body.removeChild(container); }).catch(function(){ if (container.parentNode) document.body.removeChild(container); });
+  }
+
+  function renderStaffOpeningBalSummary() {
+    var isStaff = currentUser && currentUser.role === 'Staff';
+    var card = document.getElementById('staffOpeningBalSummaryCard');
+    if (card) card.style.display = isStaff ? 'block' : 'none';
+    if (!isStaff) return;
+    var picker = document.getElementById('staffOpeningBalMonthPicker');
+    var month = picker ? picker.value : getISTMonthStr();
+    var op = appData.openingBalances[month] || { cash: 0, bank: 0, credit: 0 };
+    var cash = parseFloat(op.cash || 0), bank = parseFloat(op.bank || 0), credit = parseFloat(op.credit || 0);
+    var el = function(id) { return document.getElementById(id); };
+    if (el('staffObCash')) el('staffObCash').innerText = '₹' + cash.toFixed(2);
+    if (el('staffObBank')) el('staffObBank').innerText = '₹' + bank.toFixed(2);
+    if (el('staffObCredit')) el('staffObCredit').innerText = '₹' + credit.toFixed(2);
+    if (el('staffObTotal')) el('staffObTotal').innerText = '₹' + (cash + bank + credit).toFixed(2);
   }
 
   /* STAFF MASTER SERVICE CATALOGUE (shared with Admin - same appData.masterServices) */
@@ -3121,29 +3219,43 @@ const FIREBASE_CONFIG = {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    var allServices = appData.masterServices.slice().reverse();
-    var visibleServices = staffMasterCatalogShowAll ? allServices : allServices.slice(0, 7);
-    visibleServices.forEach(s => {
+    appData.masterServices.forEach(s => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><span class="badge badge-std-cat">${s.category}</span></td>
         <td><strong>${s.name}</strong></td>
         <td style="font-weight:800;">₹${parseFloat(s.price || 0).toFixed(2)}</td>
+        <td>
+          <button onclick="editStaffMasterService('${s.id}')" style="background:none; color:var(--primary);"><i class="fa-solid fa-pen"></i></button>
+          <button onclick="deleteStaffMasterService('${s.id}')" style="background:none; color:var(--accent-rose);"><i class="fa-solid fa-trash"></i></button>
+        </td>
       `;
       tbody.appendChild(tr);
     });
+  }
 
-    var moreBox = document.getElementById('staffMasterServicesShowMoreBox');
-    if (moreBox) {
-      moreBox.style.display = allServices.length > 7 ? 'block' : 'none';
-      var moreBtn = moreBox.querySelector('button');
-      if (moreBtn) moreBtn.innerText = staffMasterCatalogShowAll ? 'View Less' : 'View More Entries (' + allServices.length + ' total)';
-    }
-    var stfWrap = document.getElementById('staffMasterServicesTableWrap');
-    if (stfWrap) {
-      stfWrap.style.maxHeight = staffMasterCatalogShowAll ? '420px' : 'none';
-      stfWrap.style.overflowY = staffMasterCatalogShowAll ? 'auto' : 'visible';
-    }
+  function editStaffMasterService(id) {
+    var s = appData.masterServices.find(function(x) { return x.id === id; });
+    if (!s) return;
+    document.getElementById('staffNewServiceCategory').value = s.category;
+    document.getElementById('staffNewServiceName').value = s.name;
+    document.getElementById('staffNewServicePrice').value = s.price;
+    document.getElementById('staffNewServiceDeptFee').value = s.deptFee || 0;
+    updateStaffDeptFeeVisibility();
+    appData.masterServices = appData.masterServices.filter(function(x) { return x.id !== id; });
+    saveData();
+    populateServiceDropdown();
+    renderStaffMasterCatalog();
+    renderMasterCatalogTable();
+  }
+
+  function deleteStaffMasterService(id) {
+    if (!confirm('Are you sure you want to delete this service from the master catalog?')) return;
+    appData.masterServices = appData.masterServices.filter(function(x) { return x.id !== id; });
+    saveData();
+    populateServiceDropdown();
+    renderStaffMasterCatalog();
+    renderMasterCatalogTable();
   }
 
   function saveStaffMasterService(e) {
@@ -3263,7 +3375,7 @@ const FIREBASE_CONFIG = {
 
     const monthStr = getISTMonthStr();
     if (!appData.openingBalances[monthStr]) {
-      appData.openingBalances[monthStr] = { cash: 3000, bank: 0, credit: 0 };
+      appData.openingBalances[monthStr] = { cash: 0, bank: 0, credit: 0 };
     }
 
     if (target === 'Cash') appData.openingBalances[monthStr].cash = newAmt;
@@ -3631,16 +3743,14 @@ const FIREBASE_CONFIG = {
     let totalCount = logs.length;
     let totalDeptFee = 0;
     let totalRevenue = 0;
-    logs.forEach(s => {
-      totalDeptFee += parseFloat(s.deptFee || 0);
-      totalRevenue += parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0);
-    });
 
     const tbody = document.getElementById('serviceHistoryTable');
     tbody.innerHTML = '';
 
-    const visibleLogs = serviceHistoryShowAll ? logs : logs.slice(0, 7);
-    visibleLogs.forEach(s => {
+    logs.forEach(s => {
+      totalDeptFee += parseFloat(s.deptFee || 0);
+      totalRevenue += parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0);
+
       const tr = document.createElement('tr');
       let modeBadge = `<span class="badge badge-cash">${s.payMode}</span>`;
       if (s.payMode === 'Bank/UPI') modeBadge = `<span class="badge badge-upi">${s.payMode}</span>`;
@@ -3675,18 +3785,6 @@ const FIREBASE_CONFIG = {
     document.getElementById('summaryCount').innerText = totalCount;
     document.getElementById('summaryTodayDeptFee').innerText = `₹${totalDeptFee.toFixed(2)}`;
     document.getElementById('summaryRevenue').innerText = `₹${totalRevenue.toFixed(2)}`;
-
-    var moreBox = document.getElementById('serviceHistoryShowMoreBox');
-    if (moreBox) {
-      moreBox.style.display = logs.length > 7 ? 'block' : 'none';
-      var moreBtn = moreBox.querySelector('button');
-      if (moreBtn) moreBtn.innerText = serviceHistoryShowAll ? 'View Less' : 'View More Entries (' + logs.length + ' total)';
-    }
-    var svcWrap = document.getElementById('serviceHistoryTableWrap');
-    if (svcWrap) {
-      svcWrap.style.maxHeight = serviceHistoryShowAll ? '420px' : 'none';
-      svcWrap.style.overflowY = serviceHistoryShowAll ? 'auto' : 'visible';
-    }
   }
 
   function deleteServiceRecord(id) {
@@ -3886,13 +3984,13 @@ const FIREBASE_CONFIG = {
 
     const logs = appData.expenseLog.filter(e => e.date.substring(0, 7) === month).sort((a, b) => entryDateTimeValue(b) - entryDateTimeValue(a));
     let totalExp = 0;
-    logs.forEach(e => { totalExp += parseFloat(e.amount || 0); });
 
     const tbody = document.getElementById('expenseHistoryTable');
     tbody.innerHTML = '';
 
-    const visibleLogs = expenseHistoryShowAll ? logs : logs.slice(0, 7);
-    visibleLogs.forEach(e => {
+    logs.forEach(e => {
+      totalExp += parseFloat(e.amount || 0);
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${e.date} <span style="font-size:0.75rem; color:var(--text-muted);">${e.time || ''}</span></td>
@@ -3913,18 +4011,6 @@ const FIREBASE_CONFIG = {
 
     document.getElementById('expDispTotalDeducted').innerText = `₹${totalExp.toFixed(2)}`;
     document.getElementById('expenseTotalSum').innerText = `₹${totalExp.toFixed(2)}`;
-
-    var moreBox = document.getElementById('expenseHistoryShowMoreBox');
-    if (moreBox) {
-      moreBox.style.display = logs.length > 7 ? 'block' : 'none';
-      var moreBtn = moreBox.querySelector('button');
-      if (moreBtn) moreBtn.innerText = expenseHistoryShowAll ? 'View Less' : 'View More Entries (' + logs.length + ' total)';
-    }
-    var expWrap = document.getElementById('expenseHistoryTableWrap');
-    if (expWrap) {
-      expWrap.style.maxHeight = expenseHistoryShowAll ? '420px' : 'none';
-      expWrap.style.overflowY = expenseHistoryShowAll ? 'auto' : 'visible';
-    }
   }
 
   function deleteExpenseRecord(id) {
@@ -4003,11 +4089,6 @@ const FIREBASE_CONFIG = {
 
   var transferHistoryShowAll = false;
   var adminTransferHistoryShowAll = false;
-  var serviceHistoryShowAll = false;
-  var expenseHistoryShowAll = false;
-  var historicalMonthsShowAll = false;
-  var masterCatalogShowAll = false;
-  var staffMasterCatalogShowAll = false;
 
   function toggleTransferHistoryShowMore() {
     transferHistoryShowAll = !transferHistoryShowAll;
@@ -4017,31 +4098,6 @@ const FIREBASE_CONFIG = {
   function toggleAdminTransferHistoryShowMore() {
     adminTransferHistoryShowAll = !adminTransferHistoryShowAll;
     renderAdminTransferTab();
-  }
-
-  function toggleServiceHistoryShowMore() {
-    serviceHistoryShowAll = !serviceHistoryShowAll;
-    renderServicesTab();
-  }
-
-  function toggleExpenseHistoryShowMore() {
-    expenseHistoryShowAll = !expenseHistoryShowAll;
-    renderExpenseTab();
-  }
-
-  function toggleHistoricalMonthsShowMore() {
-    historicalMonthsShowAll = !historicalMonthsShowAll;
-    renderHistoricalMonthsTable();
-  }
-
-  function toggleMasterCatalogShowMore() {
-    masterCatalogShowAll = !masterCatalogShowAll;
-    renderMasterCatalogTable();
-  }
-
-  function toggleStaffMasterCatalogShowMore() {
-    staffMasterCatalogShowAll = !staffMasterCatalogShowAll;
-    renderStaffMasterCatalog();
   }
 
   function renderTransferTab() {
@@ -4145,12 +4201,18 @@ const FIREBASE_CONFIG = {
     var amount = parseFloat(document.getElementById(amtInputId).value || 0);
     if (!amount || amount <= 0) return alert('Please enter a valid amount.');
     if (!appData.adminTransfers) appData.adminTransfers = [];
+    var transferSource = 'Bank/UPI';
+    if (type === 'TransferToAdmin') {
+      var srcEl = document.getElementById('adminTransferSourceInput');
+      if (srcEl) transferSource = srcEl.value;
+    }
     var newRecord = {
       id: 'ADMTRF_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
       date: date,
       time: getISTTimeStr(),
       timestamp: Date.now(),
       type: type,
+      source: transferSource,
       desc: desc || (type === 'TransferToAdmin' ? 'Transfer to Admin' : 'Received from Admin'),
       amount: amount,
       staff: currentUser.name
@@ -4183,10 +4245,11 @@ const FIREBASE_CONFIG = {
       var isReceived = t.type === 'ReceivedFromAdmin';
       var typeLabel = isReceived ? 'Received from Admin' : 'Transfer to Admin';
       var color = isReceived ? '#F59E0B' : '#10B981';
+      var sourceLabel = isReceived ? '' : ('<br><span style="font-size:0.68rem; color:var(--text-muted);">From: ' + (t.source || 'Bank/UPI') + '</span>');
       var tr = document.createElement('tr');
       var actions = isClosed ? '<span style="color:var(--text-muted); font-size:0.75rem;">Locked</span>' : '<button onclick="openEditAdminTransferModal(&#39;' + t.id + '&#39;)" style="background:none; color:var(--primary); padding:2px 6px;"><i class="fa-solid fa-pen"></i></button> <button onclick="deleteAdminTransferRecord(&#39;' + t.id + '&#39;)" style="background:none; color:var(--accent-rose); padding:2px 6px;"><i class="fa-solid fa-trash"></i></button>';
       tr.innerHTML = '<td>' + t.date + ' <span style="font-size:0.75rem; color:var(--text-muted);">' + (t.time || '') + '</span></td>' +
-        '<td><strong style="color:' + color + ';">' + typeLabel + '</strong></td>' +
+        '<td><strong style="color:' + color + ';">' + typeLabel + '</strong>' + sourceLabel + '</td>' +
         '<td>' + (t.desc || '-') + '</td>' +
         '<td style="font-weight:800; color:' + color + ';">₹' + parseFloat(t.amount || 0).toFixed(2) + '</td>' +
         '<td>' + t.staff + '</td>' +
@@ -4218,9 +4281,19 @@ const FIREBASE_CONFIG = {
     document.getElementById('editAdminTransferId').value = t.id;
     document.getElementById('editAdminTransferDate').value = t.date;
     document.getElementById('editAdminTransferType').value = t.type;
+    if (document.getElementById('editAdminTransferSource')) {
+      document.getElementById('editAdminTransferSource').value = t.source || 'Bank/UPI';
+    }
+    toggleEditAdminTransferSource();
     document.getElementById('editAdminTransferDesc').value = t.desc || '';
     document.getElementById('editAdminTransferAmount').value = t.amount;
     document.getElementById('editAdminTransferModal').style.display = 'flex';
+  }
+
+  function toggleEditAdminTransferSource() {
+    var type = document.getElementById('editAdminTransferType').value;
+    var grp = document.getElementById('editAdminTransferSourceGroup');
+    if (grp) grp.style.display = (type === 'TransferToAdmin') ? 'block' : 'none';
   }
 
   function closeEditAdminTransferModal() {
@@ -4233,6 +4306,11 @@ const FIREBASE_CONFIG = {
     if (!t) return;
     t.date = document.getElementById('editAdminTransferDate').value;
     t.type = document.getElementById('editAdminTransferType').value;
+    if (t.type === 'TransferToAdmin' && document.getElementById('editAdminTransferSource')) {
+      t.source = document.getElementById('editAdminTransferSource').value;
+    } else {
+      t.source = 'Bank/UPI';
+    }
     t.desc = document.getElementById('editAdminTransferDesc').value.trim();
     t.amount = parseFloat(document.getElementById('editAdminTransferAmount').value || 0);
     saveData();
@@ -4457,6 +4535,7 @@ const FIREBASE_CONFIG = {
       tbody.appendChild(tr);
     });
 
+    Array.prototype.slice.call(tbody.children).sort(function(a, b) { var aDT = (a.cells[1] ? a.cells[1].textContent.trim() : ''); var bDT = (b.cells[1] ? b.cells[1].textContent.trim() : ''); return bDT.localeCompare(aDT); }).forEach(function(tr) { tbody.appendChild(tr); });
     const netBal = rev - exp;
 
     document.getElementById('rptRevenue').innerText = `₹${rev.toFixed(2)}`;
@@ -4527,6 +4606,30 @@ const FIREBASE_CONFIG = {
     const btn = document.getElementById('btnCloseMonthToggle');
     btn.innerText = isClosed ? 'Reopen Month' : 'Close Month & Transfer Balances';
 
+    var saveHistBtn = document.getElementById('btnSaveMonthToHistorical');
+    if (saveHistBtn) saveHistBtn.style.display = isClosed ? 'inline-block' : 'none';
+
+    var bal = getOperatingBalances(month);
+    var op = appData.openingBalances[month] || { cash: 0, bank: 0, credit: 0 };
+    var openingTotal = parseFloat(op.cash || 0) + parseFloat(op.bank || 0) + parseFloat(op.credit || 0);
+    var srvCharges = 0;
+    appData.serviceLog.filter(s => s.date.substring(0, 7) === month).forEach(s => { srvCharges += parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0); });
+    var totalExp = 0, salaryExp = 0;
+    appData.expenseLog.filter(e => e.date.substring(0, 7) === month).forEach(e => { var amt = parseFloat(e.amount || 0); totalExp += amt; if (e.category === 'Salary / Salary Advance') salaryExp += amt; });
+    var adminSent = 0, adminRecv = 0;
+    (appData.adminTransfers || []).forEach(function(at) { if ((at.date || '').substring(0, 7) !== month) return; if (at.type === 'TransferToAdmin') adminSent += parseFloat(at.amount || 0); else if (at.type === 'ReceivedFromAdmin') adminRecv += parseFloat(at.amount || 0); });
+    var adminNet = adminSent - adminRecv;
+    var netProfit = srvCharges - totalExp;
+    var el = function(id) { return document.getElementById(id); };
+    if (el('mcReviewCash')) el('mcReviewCash').innerText = '₹' + bal.cash.toFixed(2);
+    if (el('mcReviewBank')) el('mcReviewBank').innerText = '₹' + bal.bank.toFixed(2);
+    if (el('mcReviewCredit')) el('mcReviewCredit').innerText = '₹' + bal.credit.toFixed(2);
+    if (el('mcReviewServiceCharge')) el('mcReviewServiceCharge').innerText = '₹' + srvCharges.toFixed(2);
+    if (el('mcReviewExpenses')) el('mcReviewExpenses').innerText = '₹' + totalExp.toFixed(2);
+    if (el('mcReviewSalary')) el('mcReviewSalary').innerText = '₹' + salaryExp.toFixed(2);
+    if (el('mcReviewAdminTransfers')) el('mcReviewAdminTransfers').innerText = '₹' + adminNet.toFixed(2);
+    if (el('mcReviewNetProfit')) { el('mcReviewNetProfit').innerText = '₹' + netProfit.toFixed(2); el('mcReviewNetProfit').style.color = netProfit >= 0 ? 'var(--accent-green)' : 'var(--accent-rose)'; }
+
     // Check pending receivables preserved
     let preservedRec = 0;
     appData.serviceLog.forEach(s => {
@@ -4550,6 +4653,12 @@ const FIREBASE_CONFIG = {
     const isClosed = !!appData.closedMonths[month];
 
     if (!isClosed) {
+      var _aSent = 0, _aRecv = 0;
+      (appData.adminTransfers || []).forEach(function(at) { if ((at.date || '').substring(0, 7) !== month) return; if (at.type === 'TransferToAdmin') _aSent += parseFloat(at.amount || 0); else if (at.type === 'ReceivedFromAdmin') _aRecv += parseFloat(at.amount || 0); });
+      var _aNet = _aSent - _aRecv;
+      if (Math.abs(_aNet) > 0.01) {
+        return alert('Cannot close month ' + month + '.\n\nAdmin Fund Transfer net is ₹' + _aNet.toFixed(2) + ' (Transferred to Admin: ₹' + _aSent.toFixed(2) + ', Received from Admin: ₹' + _aRecv.toFixed(2) + ').\n\nBalance the Admin Fund Transfer to net zero before closing the month.');
+      }
       if (!confirm(`Are you sure you want to close month ${month}? Physical Cash and Bank balances will be settled to Admin Bank Account (set to zero) while Pending Receivables are preserved.`)) return;
 
       // Transfer Cash and Bank balances to Admin Account (Set to 0)
@@ -4673,9 +4782,7 @@ const FIREBASE_CONFIG = {
       cumulative += parseFloat(h.serviceCharge || 0) - parseFloat(h.expense || 0);
       cumulativeByMonth[m] = cumulative;
     });
-    var allMonths = Object.keys(appData.historicalMonths).sort().reverse();
-    var visibleMonths = historicalMonthsShowAll ? allMonths : allMonths.slice(0, 7);
-    visibleMonths.forEach(function(m) {
+    Object.keys(appData.historicalMonths).sort().reverse().forEach(function(m) {
       var h = appData.historicalMonths[m];
       var net = parseFloat(h.serviceCharge || 0) - parseFloat(h.expense || 0);
       var netColor = net >= 0 ? 'var(--accent-green)' : 'var(--accent-rose)';
@@ -4690,18 +4797,6 @@ const FIREBASE_CONFIG = {
         '<td><button onclick="deleteHistoricalMonth(&#39;' + m + '&#39;)" style="background:none; color:var(--accent-rose); padding:2px 6px;"><i class="fa-solid fa-trash"></i></button></td>';
       tbody.appendChild(tr);
     });
-
-    var moreBox = document.getElementById('historicalMonthsShowMoreBox');
-    if (moreBox) {
-      moreBox.style.display = allMonths.length > 7 ? 'block' : 'none';
-      var moreBtn = moreBox.querySelector('button');
-      if (moreBtn) moreBtn.innerText = historicalMonthsShowAll ? 'View Less' : 'View More Entries (' + allMonths.length + ' total)';
-    }
-    var histWrap = document.getElementById('historicalMonthsTableWrap');
-    if (histWrap) {
-      histWrap.style.maxHeight = historicalMonthsShowAll ? '420px' : 'none';
-      histWrap.style.overflowY = historicalMonthsShowAll ? 'auto' : 'visible';
-    }
   }
 
   function deleteHistoricalMonth(m) {
@@ -4712,55 +4807,140 @@ const FIREBASE_CONFIG = {
     renderHrMonthlyManagement();
   }
 
+  function saveCurrentMonthToHistorical() {
+    var month = document.getElementById('monthClosingPicker').value || getISTMonthStr();
+    if (!month) return alert('Please select a month first.');
+    if (!appData.closedMonths[month]) { if (!confirm('This month is not yet closed. Save current figures to historical data anyway?')) return; }
+    var srvCharges = 0;
+    appData.serviceLog.filter(s => s.date.substring(0, 7) === month).forEach(s => { srvCharges += parseFloat(s.serviceCharge || 0) - parseFloat(s.discount || 0); });
+    var totalExp = 0;
+    appData.expenseLog.filter(e => e.date.substring(0, 7) === month).forEach(e => { totalExp += parseFloat(e.amount || 0); });
+    if (!appData.historicalMonths) appData.historicalMonths = {};
+    appData.historicalMonths[month] = { serviceCharge: srvCharges, expense: totalExp };
+    saveData();
+    alert('Month ' + month + ' saved to Historical Data.\nService Charge: ₹' + srvCharges.toFixed(2) + '\nExpenses: ₹' + totalExp.toFixed(2) + '\nNet Profit: ₹' + (srvCharges - totalExp).toFixed(2));
+    renderHistoricalMonthsTable();
+    renderHrMonthlyManagement();
+  }
+
   /* STAFF SALARIES & INCENTIVES */
+  function getStaffAttendancePct(staffName, month) {
+    var year = parseInt(month.split('-')[0]);
+    var mIdx = parseInt(month.split('-')[1]) - 1;
+    var daysInMonth = new Date(year, mIdx + 1, 0).getDate();
+    var sundays = 0;
+    for (var d = 1; d <= daysInMonth; d++) { if (new Date(year, mIdx, d).getDay() === 0) sundays++; }
+    var workingDays = daysInMonth - sundays;
+    if (workingDays <= 0) return 100;
+    var attdData = (appData.attendance[month] && appData.attendance[month][staffName]) ? appData.attendance[month][staffName] : {};
+    var todayIST = getISTDate();
+    var currentDayNum = todayIST.getDate();
+    var isCurrentMonth = getISTMonthStr(todayIST) === month;
+    var attended = 0;
+    for (var d2 = 1; d2 <= (isCurrentMonth ? currentDayNum : daysInMonth); d2++) {
+      var dt = new Date(year, mIdx, d2);
+      if (dt.getDay() === 0) continue;
+      var dateStr = year + '-' + String(mIdx + 1).padStart(2, '0') + '-' + String(d2).padStart(2, '0');
+      if (attdData[dateStr]) attended++;
+    }
+    return workingDays > 0 ? Math.round((attended / workingDays) * 100) : 0;
+  }
+
+  function getStaffAttendanceAdjustment(staffName, month, totalPayableBeforeAdj) {
+    var pct = getStaffAttendancePct(staffName, month);
+    if (pct >= 89) return { pct: pct, adjustment: 0, reason: 'Attendance 89%+ — no adjustment', autoDeduction: 0 };
+    var shortfall = 89 - pct;
+    var deduction = Math.round((totalPayableBeforeAdj * shortfall / 100) * 100) / 100;
+    var override = null;
+    if (appData.monthlySalaries[month] && appData.monthlySalaries[month][staffName] && appData.monthlySalaries[month][staffName].attAdjustment !== undefined) {
+      override = parseFloat(appData.monthlySalaries[month][staffName].attAdjustment || 0);
+    }
+    return { pct: pct, adjustment: (override !== null ? override : deduction), reason: 'Attendance ' + pct + '% (below 89%)', autoDeduction: deduction };
+  }
+
   function renderStaffSalaryTable() {
     const month = document.getElementById('salaryMonthPicker').value || getISTMonthStr();
     const tbody = document.getElementById('staffSalaryTableBody');
     tbody.innerHTML = '';
-
     const staffUsers = appData.users.filter(u => u.role === 'Staff');
-
     staffUsers.forEach(u => {
-      let basic = 0;
-      if (appData.monthlySalaries[month] && appData.monthlySalaries[month][u.name]) {
-        basic = parseFloat(appData.monthlySalaries[month][u.name].basic || 0);
-      }
-
+      var sal = (appData.monthlySalaries[month] && appData.monthlySalaries[month][u.name]) || {};
+      let basic = parseFloat(sal.basic || 0);
+      let incPct = parseFloat(sal.incentivePct !== undefined ? sal.incentivePct : 20);
+      if (incPct < 0) incPct = 0; if (incPct > 100) incPct = 100;
       let collection = 0;
-      appData.serviceLog.filter(s => s.staff === u.name && s.date.substring(0, 7) === month).forEach(s => {
-        collection += parseFloat(s.serviceCharge || 0);
-      });
-
-      // Incentive: 20% of eligible collections exceeding basic salary
-      let incentive = 0;
-      if (collection > basic) {
-        incentive = 0.20 * (collection - basic);
-      }
-
-      const totalPayable = basic + incentive;
-
+      appData.serviceLog.filter(s => s.staff === u.name && s.date.substring(0, 7) === month).forEach(s => { collection += parseFloat(s.serviceCharge || 0); });
+      let incentive = collection > basic ? (incPct / 100) * (collection - basic) : 0;
+      var attPct = getStaffAttendancePct(u.name, month);
+      var adjInfo = getStaffAttendanceAdjustment(u.name, month, basic + incentive);
+      var attAdjustment = adjInfo.adjustment;
+      var finalized = sal.finalized || false;
+      const totalPayable = Math.max(0, basic + incentive - attAdjustment);
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><strong>${u.name}</strong></td>
-        <td><input type="number" id="basicSal_${u.name}" value="${basic}" style="width:110px;" min="0"></td>
+        <td><strong>${u.name}</strong>${finalized ? '<br><span class="badge badge-closed" style="font-size:0.65rem;">Finalized</span>' : ''}</td>
+        <td><input type="number" id="basicSal_${u.name}" value="${basic}" style="width:100px;" min="0" ${finalized ? 'disabled' : ''}></td>
+        <td><input type="number" id="incPct_${u.name}" value="${incPct}" style="width:70px;" min="0" max="100" ${finalized ? 'disabled' : ''}></td>
         <td>₹${collection.toFixed(2)}</td>
         <td style="color:var(--accent-green); font-weight:800;">₹${incentive.toFixed(2)}</td>
+        <td>${attPct}%</td>
+        <td><input type="number" id="attAdj_${u.name}" value="${attAdjustment}" style="width:90px;" min="0" ${finalized ? 'disabled' : ''} title="${adjInfo.reason}"><div style="font-size:0.62rem; color:var(--text-muted);">Auto: ₹${(adjInfo.autoDeduction || 0).toFixed(2)}</div></td>
         <td style="color:var(--atmos-navy); font-weight:900;">₹${totalPayable.toFixed(2)}</td>
+        <td>${finalized ? '<button onclick="unfinalizeStaffSalary(\'${u.name}\')" style="background:none; color:var(--accent-amber); font-size:0.75rem;"><i class="fa-solid fa-lock-open"></i> Reopen</button>' : '<button onclick="finalizeStaffSalary(\'${u.name}\')" style="background:none; color:var(--accent-green); font-size:0.75rem;"><i class="fa-solid fa-check"></i> Finalize</button>'}</td>
       `;
       tbody.appendChild(tr);
     });
   }
 
+  function finalizeStaffSalary(staffName) {
+    var month = document.getElementById('salaryMonthPicker').value || getISTMonthStr();
+    if (!appData.monthlySalaries[month]) appData.monthlySalaries[month] = {};
+    var basic = parseFloat(document.getElementById('basicSal_' + staffName).value || 0);
+    var incPct = parseFloat(document.getElementById('incPct_' + staffName).value || 0);
+    if (incPct < 0) incPct = 0; if (incPct > 100) incPct = 100;
+    var attAdj = parseFloat(document.getElementById('attAdj_' + staffName).value || 0);
+    if (attAdj < 0) attAdj = 0;
+    var collection = 0;
+    appData.serviceLog.filter(s => s.staff === staffName && s.date.substring(0, 7) === month).forEach(s => { collection += parseFloat(s.serviceCharge || 0); });
+    var incentive = collection > basic ? (incPct / 100) * (collection - basic) : 0;
+    var totalPayable = Math.max(0, basic + incentive - attAdj);
+    if (!confirm('Finalize salary for ' + staffName + ' (' + month + ')?\n\nBasic: ₹' + basic.toFixed(2) + '\nIncentive (' + incPct + '%): ₹' + incentive.toFixed(2) + '\nAttendance Adj: ₹' + attAdj.toFixed(2) + '\nTotal Payable: ₹' + totalPayable.toFixed(2) + '\n\nThis records ₹' + totalPayable.toFixed(2) + ' as a Shop Expense (Salary / Salary Advance) and locks the config.')) return;
+    appData.monthlySalaries[month][staffName] = { basic: basic, incentivePct: incPct, attAdjustment: attAdj, finalized: true, finalizedAmount: totalPayable };
+    var existingSalaryExp = appData.expenseLog.find(function(e) { return e.date.substring(0, 7) === month && e.category === 'Salary / Salary Advance' && e.isSalaryFinalization && e.salaryStaff === staffName; });
+    if (existingSalaryExp) {
+      existingSalaryExp.amount = totalPayable;
+      existingSalaryExp.desc = 'Salary - ' + staffName + ' (' + month + ')';
+      existingSalaryExp.date = getISTDateStr();
+    } else {
+      appData.expenseLog.unshift({ id: 'EXP_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8), date: getISTDateStr(), time: getISTTimeStr(), timestamp: Date.now(), category: 'Salary / Salary Advance', desc: 'Salary - ' + staffName + ' (' + month + ')', amount: totalPayable, payMode: 'Bank/UPI', staff: currentUser ? currentUser.name : 'Admin', isSalaryFinalization: true, salaryStaff: staffName });
+    }
+    saveData();
+    alert('Salary finalized for ' + staffName + '! ₹' + totalPayable.toFixed(2) + ' recorded as Shop Expense (Salary / Salary Advance).');
+    refreshAllViews();
+  }
+
+  function unfinalizeStaffSalary(staffName) {
+    var month = document.getElementById('salaryMonthPicker').value || getISTMonthStr();
+    if (!confirm('Reopen salary for ' + staffName + '? The Salary / Salary Advance expense will be removed.')) return;
+    if (appData.monthlySalaries[month] && appData.monthlySalaries[month][staffName]) { appData.monthlySalaries[month][staffName].finalized = false; delete appData.monthlySalaries[month][staffName].finalizedAmount; }
+    appData.expenseLog = appData.expenseLog.filter(function(e) { return !(e.date.substring(0, 7) === month && e.isSalaryFinalization && e.salaryStaff === staffName); });
+    saveData();
+    refreshAllViews();
+  }
+
   function saveStaffSalaries() {
     const month = document.getElementById('salaryMonthPicker').value || getISTMonthStr();
     if (!appData.monthlySalaries[month]) appData.monthlySalaries[month] = {};
-
     const staffUsers = appData.users.filter(u => u.role === 'Staff');
     staffUsers.forEach(u => {
-      const basicVal = parseFloat(document.getElementById(`basicSal_${u.name}`).value || 0);
-      appData.monthlySalaries[month][u.name] = { basic: basicVal };
+      var existing = appData.monthlySalaries[month][u.name] || {};
+      var basicVal = parseFloat(document.getElementById('basicSal_' + u.name).value || 0);
+      var incPctVal = parseFloat(document.getElementById('incPct_' + u.name).value || 0);
+      if (incPctVal < 0) incPctVal = 0; if (incPctVal > 100) incPctVal = 100;
+      var attAdjVal = parseFloat(document.getElementById('attAdj_' + u.name).value || 0);
+      if (attAdjVal < 0) attAdjVal = 0;
+      appData.monthlySalaries[month][u.name] = { basic: basicVal, incentivePct: incPctVal, attAdjustment: attAdjVal, finalized: existing.finalized || false, finalizedAmount: existing.finalizedAmount };
     });
-
     saveData();
     alert("Salary configurations saved successfully!");
     refreshAllViews();
@@ -4770,11 +4950,11 @@ const FIREBASE_CONFIG = {
   function loadAdminOpeningBalancesForPicker() {
     const month = document.getElementById('openingBalMonthPicker').value || getISTMonthStr();
     if (appData.openingBalances[month]) {
-      document.getElementById('adminOpeningCashInput').value = appData.openingBalances[month].cash || 3000;
+      document.getElementById('adminOpeningCashInput').value = appData.openingBalances[month].cash || 0;
       document.getElementById('adminOpeningBankInput').value = appData.openingBalances[month].bank || 0;
       document.getElementById('adminOpeningCreditInput').value = appData.openingBalances[month].credit || 0;
     } else {
-      document.getElementById('adminOpeningCashInput').value = 3000;
+      document.getElementById('adminOpeningCashInput').value = 0;
       document.getElementById('adminOpeningBankInput').value = 0;
       document.getElementById('adminOpeningCreditInput').value = 0;
     }
@@ -4783,7 +4963,7 @@ const FIREBASE_CONFIG = {
   function saveAdminOpeningBalances() {
     const month = document.getElementById('openingBalMonthPicker').value || getISTMonthStr();
     appData.openingBalances[month] = {
-      cash: parseFloat(document.getElementById('adminOpeningCashInput').value || 3000),
+      cash: parseFloat(document.getElementById('adminOpeningCashInput').value || 0),
       bank: parseFloat(document.getElementById('adminOpeningBankInput').value || 0),
       credit: parseFloat(document.getElementById('adminOpeningCreditInput').value || 0)
     };
@@ -4831,8 +5011,13 @@ const FIREBASE_CONFIG = {
           basic = parseFloat(appData.monthlySalaries[month][u.name].basic || 0);
         }
 
-        let incentive = collection > basic ? 0.20 * (collection - basic) : 0;
-        let totalPayable = basic + incentive;
+        var salCfg = (appData.monthlySalaries[month] && appData.monthlySalaries[month][u.name]) || {};
+        var incPct = parseFloat(salCfg.incentivePct !== undefined ? salCfg.incentivePct : 20);
+        if (incPct < 0) incPct = 0; if (incPct > 100) incPct = 100;
+        let incentive = collection > basic ? (incPct / 100) * (collection - basic) : 0;
+        var attPct = getStaffAttendancePct(u.name, month);
+        var adjInfo = getStaffAttendanceAdjustment(u.name, month, basic + incentive);
+        let totalPayable = Math.max(0, basic + incentive - adjInfo.adjustment);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -4841,7 +5026,7 @@ const FIREBASE_CONFIG = {
           <td style="color:var(--accent-green); font-weight:800;">₹${collection.toFixed(2)}</td>
           <td style="color:var(--primary); font-weight:800;">₹${incentive.toFixed(2)}</td>
           <td style="font-weight:900;">₹${totalPayable.toFixed(2)}</td>
-          <td>100%</td>
+          <td>${attPct}%</td>
         `;
         tbody.appendChild(tr);
       });
@@ -4864,8 +5049,12 @@ const FIREBASE_CONFIG = {
       basic = parseFloat(appData.monthlySalaries[month][staffName].basic || 0);
     }
 
-    let incentive = collection > basic ? 0.20 * (collection - basic) : 0;
-    let totalPayable = basic + incentive;
+    var salCfg = (appData.monthlySalaries[month] && appData.monthlySalaries[month][staffName]) || {};
+    var incPct = parseFloat(salCfg.incentivePct !== undefined ? salCfg.incentivePct : 20);
+    if (incPct < 0) incPct = 0; if (incPct > 100) incPct = 100;
+    let incentive = collection > basic ? (incPct / 100) * (collection - basic) : 0;
+    var adjInfo = getStaffAttendanceAdjustment(staffName, month, basic + incentive);
+    let totalPayable = Math.max(0, basic + incentive - adjInfo.adjustment);
 
     document.getElementById('repStaffName').innerText = staffName;
     document.getElementById('repStaffInteractions').innerText = logs.length;
@@ -5015,9 +5204,7 @@ const FIREBASE_CONFIG = {
     const tbody = document.getElementById('masterServicesTable');
     tbody.innerHTML = '';
 
-    var allServices = appData.masterServices.slice().reverse();
-    var visibleServices = masterCatalogShowAll ? allServices : allServices.slice(0, 7);
-    visibleServices.forEach(s => {
+    appData.masterServices.forEach(s => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><span class="badge badge-std-cat">${s.category}</span></td>
@@ -5030,18 +5217,6 @@ const FIREBASE_CONFIG = {
       `;
       tbody.appendChild(tr);
     });
-
-    var moreBox = document.getElementById('masterServicesShowMoreBox');
-    if (moreBox) {
-      moreBox.style.display = allServices.length > 7 ? 'block' : 'none';
-      var moreBtn = moreBox.querySelector('button');
-      if (moreBtn) moreBtn.innerText = masterCatalogShowAll ? 'View Less' : 'View More Entries (' + allServices.length + ' total)';
-    }
-    var mstWrap = document.getElementById('masterServicesTableWrap');
-    if (mstWrap) {
-      mstWrap.style.maxHeight = masterCatalogShowAll ? '420px' : 'none';
-      mstWrap.style.overflowY = masterCatalogShowAll ? 'auto' : 'visible';
-    }
   }
 
   /* Show/hide the Department Fee field in the Admin catalog form
@@ -5243,8 +5418,12 @@ const FIREBASE_CONFIG = {
       collection += parseFloat(s.serviceCharge || 0);
     });
 
-    let incentive = collection > basic ? 0.20 * (collection - basic) : 0;
-    let payable = basic + incentive;
+    var salCfg = (appData.monthlySalaries[month] && appData.monthlySalaries[month][staffName]) || {};
+    var incPct = parseFloat(salCfg.incentivePct !== undefined ? salCfg.incentivePct : 20);
+    if (incPct < 0) incPct = 0; if (incPct > 100) incPct = 100;
+    let incentive = collection > basic ? (incPct / 100) * (collection - basic) : 0;
+    var adjInfo = getStaffAttendanceAdjustment(staffName, month, basic + incentive);
+    let payable = Math.max(0, basic + incentive - adjInfo.adjustment);
 
     document.getElementById('profBasicSalary').innerText = `₹${basic.toFixed(2)}`;
     document.getElementById('profCollection').innerText = `₹${collection.toFixed(2)}`;
@@ -5353,13 +5532,17 @@ const FIREBASE_CONFIG = {
     const u = appData.users.find(x => x.name === staffName) || { name: staffName, mobile: "" };
 
     let basic = 0;
+    var incPct = 20;
     if (appData.monthlySalaries[month] && appData.monthlySalaries[month][staffName]) {
       basic = parseFloat(appData.monthlySalaries[month][staffName].basic || 0);
+      incPct = parseFloat(appData.monthlySalaries[month][staffName].incentivePct !== undefined ? appData.monthlySalaries[month][staffName].incentivePct : 20);
     }
+    if (incPct < 0) incPct = 0; if (incPct > 100) incPct = 100;
 
     document.getElementById('editProfNameInput').value = u.name;
     document.getElementById('editProfMobileInput').value = u.mobile || '';
     document.getElementById('editProfSalaryInput').value = basic;
+    document.getElementById('editProfIncentivePctInput').value = incPct;
 
     document.getElementById('editStaffProfileInfoModal').style.display = 'flex';
   }
@@ -5382,13 +5565,49 @@ const FIREBASE_CONFIG = {
     }
 
     if (!appData.monthlySalaries[month]) appData.monthlySalaries[month] = {};
+    var existing = appData.monthlySalaries[month][staffName] || {};
+    var incPctVal = parseFloat(document.getElementById('editProfIncentivePctInput').value || 0);
+    if (incPctVal < 0) incPctVal = 0; if (incPctVal > 100) incPctVal = 100;
     appData.monthlySalaries[month][staffName] = {
-      basic: parseFloat(document.getElementById('editProfSalaryInput').value || 0)
+      basic: parseFloat(document.getElementById('editProfSalaryInput').value || 0),
+      incentivePct: incPctVal,
+      attAdjustment: existing.attAdjustment || 0,
+      finalized: existing.finalized || false,
+      finalizedAmount: existing.finalizedAmount
     };
 
     saveData();
     closeEditStaffInfoModal();
     refreshAllViews();
+  }
+
+  function exportStaffReportPDF() {
+    var month = document.getElementById('staffReportMonthPicker').value || getISTMonthStr();
+    var shopName = 'Common Service Center';
+    var contactNumber = '8089278115';
+    var adminUser = appData.users.find(function(u) { return u.role === 'Admin'; });
+    var adminName = adminUser ? adminUser.name : 'Admin';
+    var staffUsers = appData.users.filter(function(u) { return u.role === 'Staff'; });
+    var rowsHtml = '';
+    staffUsers.forEach(function(u) {
+      var logs = appData.serviceLog.filter(function(s) { return s.staff === u.name && s.date.substring(0, 7) === month; });
+      var collection = 0; logs.forEach(function(s) { collection += parseFloat(s.serviceCharge || 0); });
+      var salCfg = (appData.monthlySalaries[month] && appData.monthlySalaries[month][u.name]) || {};
+      var basic = parseFloat(salCfg.basic || 0);
+      var incPct = parseFloat(salCfg.incentivePct !== undefined ? salCfg.incentivePct : 20);
+      var incentive = collection > basic ? (incPct / 100) * (collection - basic) : 0;
+      var attPct = getStaffAttendancePct(u.name, month);
+      var adjInfo = getStaffAttendanceAdjustment(u.name, month, basic + incentive);
+      var totalPayable = Math.max(0, basic + incentive - adjInfo.adjustment);
+      rowsHtml += '<tr><td style="padding:6px; border:1px solid #cbd5e1; font-weight:bold;">' + u.name + '</td><td style="padding:6px; border:1px solid #cbd5e1; text-align:center;">' + logs.length + '</td><td style="padding:6px; border:1px solid #cbd5e1; text-align:right; color:#059669; font-weight:bold;">₹' + collection.toFixed(2) + '</td><td style="padding:6px; border:1px solid #cbd5e1; text-align:right; color:#2563eb; font-weight:bold;">₹' + incentive.toFixed(2) + '</td><td style="padding:6px; border:1px solid #cbd5e1; text-align:right; font-weight:bold;">₹' + totalPayable.toFixed(2) + '</td><td style="padding:6px; border:1px solid #cbd5e1; text-align:center;">' + attPct + '%</td></tr>';
+    });
+    var htmlContent = '<div style="padding:30px; font-family:Arial,sans-serif; color:#0f172a;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #0B1E2D; padding-bottom:12px; margin-bottom:20px;"><div><h1 style="font-size:20px; color:#0B1E2D; margin:0;">' + shopName + '</h1><p style="font-size:12px; color:#64748b; margin:4px 0 0 0;">Contact: ' + contactNumber + '</p></div><div style="text-align:right;"><h2 style="font-size:16px; color:#EE2B2E; margin:0;">STAFF REPORT</h2><p style="font-size:11px; color:#64748b; margin:4px 0 0 0;">Month: ' + month + '</p></div></div><table style="width:100%; border-collapse:collapse; font-size:11px;"><thead><tr style="background:#f1f5f9;"><th style="padding:6px; border:1px solid #cbd5e1;">STAFF NAME</th><th style="padding:6px; border:1px solid #cbd5e1;">INTERACTIONS</th><th style="padding:6px; border:1px solid #cbd5e1;">COLLECTION (₹)</th><th style="padding:6px; border:1px solid #cbd5e1;">INCENTIVE (₹)</th><th style="padding:6px; border:1px solid #cbd5e1;">PAYABLE SALARY (₹)</th><th style="padding:6px; border:1px solid #cbd5e1;">ATTENDANCE %</th></tr></thead><tbody>' + rowsHtml + '</tbody></table><div style="margin-top:40px; display:flex; justify-content:flex-end;"><div style="text-align:right; border-top:2px dashed #64748b; width:200px; padding-top:6px;"><p style="font-size:12px; color:#64748b; margin:0;">Verified by Admin</p><p style="font-size:13px; font-weight:bold; color:#0B1E2D; margin:4px 0 0 0;">' + adminName + '</p></div></div></div>';
+    var container = document.createElement('div');
+    container.style.width = '800px'; container.style.background = '#ffffff';
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
+    var opt = { margin: 0.5, filename: 'ATMOS_Staff_Report_' + month + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+    html2pdf().set(opt).from(container).save().then(function() { document.body.removeChild(container); });
   }
 
   function renderAttendanceTable() {
